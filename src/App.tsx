@@ -1,35 +1,90 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useRef, useState } from "react";
+import { ImageManipulation } from "./components/ImageManipulation";
 
-function App() {
-  const [count, setCount] = useState(0)
+export const App = () => {
+  const [image, setImage] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (
+    event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>,
+  ) => {
+    event.preventDefault();
+
+    let files: FileList | null = null;
+
+    if ("dataTransfer" in event) {
+      files = event.dataTransfer.files;
+    } else {
+      files = event.target.files;
+    }
+
+    if (files && files.length > 0) {
+      const file = files[0];
+
+      if (!file.type.startsWith("image/")) {
+        alert("Proszę wybrać plik graficzny.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => setImage(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="flex flex-col w-full gap-4 p-4">
+      <h1 className="text-2xl font-bold">Przetwarzanie obrazu</h1>
+      <div className="flex flex-col w-full gap-2">
+        <h2 className="text-xl font-semibold">Oryginalny obraz</h2>
 
-export default App
+        <input
+          ref={imageInputRef}
+          className="hidden"
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+        />
+
+        <div
+          className={`flex flex-col border-2 rounded-xl p-4 ${
+            isDragging ? "border-amber-400" : "border-gray-600"
+          } border-dashed w-full h-[400px] items-center justify-center text-gray-600 transition-all`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setIsDragging(false);
+            handleImageUpload(event);
+          }}
+        >
+          {image ? (
+            <div className="flex items-center justify-center w-full h-full">
+              <img
+                src={image}
+                alt="Załadowany obraz"
+                className="max-w-full max-h-full object-contain border-4 border-solid border-gray-600"
+              />
+            </div>
+          ) : (
+            <p className="text-center">
+              Przeciągnij obraz tutaj lub{" "}
+              <button
+                className="underline underline-offset-1 cursor-pointer hover:underline-offset-4 hover:text-gray-400"
+                onClick={() => imageInputRef.current?.click()}
+              >
+                wybierz go z dysku
+              </button>
+            </p>
+          )}
+        </div>
+      </div>
+      <ImageManipulation image={image} />
+    </div>
+  );
+};
