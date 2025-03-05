@@ -6,11 +6,19 @@ import {
   applyNegative,
   applyBinarization,
 } from "../utils/manipulate";
-import { defaultAverageKernel, defaultGaussianKernel, defaultSharpenKernel } from "../utils/filter";
+import {
+  applyAverageFilter,
+  applyGaussianFilter,
+  applySharpenFilter,
+  defaultAverageKernel,
+  defaultGaussianKernel,
+  defaultSharpenKernel,
+} from "../utils/filter";
 import { Tabs } from "./ui/Tabs";
 import { BasicToolsTab } from "./BasicToolsTab";
 import { FiltersTab, TFilter } from "./FiltersTab";
-import { TImage } from "../utils/useImage";
+import { TImage, useImage } from "../utils/useImage";
+import { ButtonDelete, ButtonDownload, ButtonReset } from "./ui/Buttons";
 
 interface ImageManipulationProps {
   image: TImage;
@@ -18,19 +26,31 @@ interface ImageManipulationProps {
 
 export const ImageManipulation = (props: ImageManipulationProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const {
+    changeBrightness,
+    changeContrast,
+    changeGrayscale,
+    changeNegative,
+    changeThreshold,
+    applyFilter,
+    removeImage,
+    revertImage,
+  } = useImage();
 
   useEffect(() => {
     if (props.image && canvasRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
-      const img = new Image();
-      img.src = props.image.path;
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx?.drawImage(img, 0, 0);
-        applyFilters(ctx, img.width, img.height);
-      };
+      if (ctx) {
+        canvas.width = props.image.width;
+        canvas.height = props.image.height;
+        ctx.putImageData(
+          new ImageData(props.image.data, props.image.width, props.image.height),
+          0,
+          0,
+        );
+        applyFilters(ctx, props.image.width, props.image.height);
+      }
     }
   }, [props.image]);
 
@@ -76,28 +96,45 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
     {
       label: "Filtr uśredniający",
       defaultKernel: defaultAverageKernel,
-      onFilterApply: (kernel) => console.log(kernel),
+      onFilterApply: (kernel) => applyFilter(props.image.id, applyAverageFilter, kernel),
     },
     {
       label: "Filtr Gaussa",
       defaultKernel: defaultGaussianKernel,
-      onFilterApply: (kernel) => console.log(kernel),
+      onFilterApply: (kernel) => applyFilter(props.image.id, applyGaussianFilter, kernel),
     },
     {
       label: "Wyostrzanie",
       defaultKernel: defaultSharpenKernel,
-      onFilterApply: (kernel) => console.log(kernel),
+      onFilterApply: (kernel) => applyFilter(props.image.id, applySharpenFilter, kernel),
     },
   ];
 
+  const handleDownload = () => {
+    if (canvasRef.current) {
+      const canvas = canvasRef.current;
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = "image.png";
+      link.click();
+    }
+  };
+
   return (
     props.image && (
-      <div className="flex flex-col max-w-[600px] min-w-[400px] gap-2">
-        <h2 className="text-xl font-semibold">Manipulacja obrazem #1</h2>
+      <div className="flex flex-col  max-w-[600px] min-w-[600px] gap-2">
+        <div className="flex items-center justify-between w-full h-10">
+          <h2 className="text-xl font-semibold">Manipulacja obrazem #1</h2>
+          <div className="flex gap-2">
+            <ButtonReset onReset={() => revertImage(props.image.id)} />
+            <ButtonDownload onDownload={handleDownload} />
+            <ButtonDelete onDelete={() => removeImage(props.image.id)} />
+          </div>
+        </div>
         <div className="flex border-2 flex-col rounded-[14px]  p-2 border-gray-600 w-full items-center justify-between text-gray-600">
           <canvas
             ref={canvasRef}
-            className="max-w-full max-h-[500px] w-full h-full object-contain rounded-md shrink"
+            className="max-w-full max-h-[500px] w-full h-full object-contain rounded-md"
           />
           <div className="w-full h-full p-4 place-self-start">
             <Tabs
@@ -108,15 +145,15 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
                   content: (
                     <BasicToolsTab
                       isGrayscale={props.image.isGrayscale}
-                      setIsGrayscale={setIsGrayscale}
+                      changeGrayscale={(val) => changeGrayscale(props.image.id, val)}
                       brightness={props.image.brightness}
-                      setBrightness={setBrightness}
+                      changeBrightness={(val) => changeBrightness(props.image.id, val)}
                       contrast={props.image.contrast}
-                      setContrast={setContrast}
+                      changeContrast={(val) => changeContrast(props.image.id, val)}
                       isNegative={props.image.isNegative}
-                      setIsNegative={setIsNegative}
+                      changeNegative={(val) => changeNegative(props.image.id, val)}
                       threshold={props.image.threshold}
-                      setThreshold={setThreshold}
+                      changeThreshold={(val) => changeThreshold(props.image.id, val)}
                     />
                   ),
                 },

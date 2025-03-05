@@ -3,15 +3,15 @@ import { Toggle } from "./ui/Toggle";
 
 interface IBasicToolsTabProps {
   brightness: number | null;
-  setBrightness: (value: number | null) => void;
+  changeBrightness: (value: number | null) => void;
   contrast: number | null;
-  setContrast: (value: number | null) => void;
+  changeContrast: (value: number | null) => void;
   threshold: number | null;
-  setThreshold: (value: number | null) => void;
+  changeThreshold: (value: number | null) => void;
   isNegative: boolean | null;
-  setIsNegative: (value: boolean | null) => void;
+  changeNegative: (value: boolean | null) => void;
   isGrayscale: boolean | null;
-  setIsGrayscale: (value: boolean | null) => void;
+  changeGrayscale: (value: boolean | null) => void;
 }
 
 export const BasicToolsTab = (props: IBasicToolsTabProps) => {
@@ -22,8 +22,8 @@ export const BasicToolsTab = (props: IBasicToolsTabProps) => {
         value={props.brightness}
         minValue={0}
         maxValue={200}
-        onChange={(value) => props.setBrightness(value)}
-        onReset={() => props.setBrightness(100)}
+        onChange={(value) => props.changeBrightness(value)}
+        onReset={() => props.changeBrightness(100)}
         defaultValue={100}
       />
 
@@ -32,8 +32,8 @@ export const BasicToolsTab = (props: IBasicToolsTabProps) => {
         value={props.contrast}
         minValue={0}
         maxValue={200}
-        onChange={(value) => props.setContrast(value)}
-        onReset={() => props.setContrast(100)}
+        onChange={(value) => props.changeContrast(value)}
+        onReset={() => props.changeContrast(100)}
         defaultValue={100}
       />
 
@@ -42,23 +42,24 @@ export const BasicToolsTab = (props: IBasicToolsTabProps) => {
         value={props.threshold}
         minValue={0}
         maxValue={255}
-        onChange={(value) => props.setThreshold(value)}
+        onChange={(value) => props.changeThreshold(value)}
         isToggle
-        onReset={() => props.setThreshold(null)}
-        onToggle={(isToggle) => props.setThreshold(isToggle ? 128 : null)}
+        isToggleActive={props.threshold !== null}
+        onReset={() => props.changeThreshold(null)}
+        onToggle={(isToggle) => props.changeThreshold(isToggle ? 128 : null)}
         defaultValue={128}
       />
 
       <Toggle
         label="Skala szarości"
         isChecked={props.isGrayscale ?? false}
-        onChange={props.setIsGrayscale}
+        onChange={(value) => props.changeGrayscale(value)}
       />
 
       <Toggle
         label="Negatyw"
         isChecked={props.isNegative ?? false}
-        onChange={props.setIsNegative}
+        onChange={(value) => props.changeNegative(value)}
       />
     </div>
   );

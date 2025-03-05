@@ -1,10 +1,17 @@
+export type TApplyFilter = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  kernel: number[][],
+) => Uint8ClampedArray;
+
 export const defaultAverageKernel = [
   [1, 1, 1],
   [1, 1, 1],
   [1, 1, 1],
 ];
 
-export const applyAverageFilter = (
+export const applyAverageFilter: TApplyFilter = (
   data: Uint8ClampedArray,
   width: number,
   height: number,
@@ -45,7 +52,7 @@ export const defaultGaussianKernel = [
   [1, 2, 1],
 ];
 
-export const applyGaussianFilter = (
+export const applyGaussianFilter: TApplyFilter = (
   data: Uint8ClampedArray,
   width: number,
   height: number,
@@ -86,7 +93,7 @@ export const defaultSharpenKernel = [
   [0, -1, 0],
 ];
 
-export const applySharpenFilter = (
+export const applySharpenFilter: TApplyFilter = (
   data: Uint8ClampedArray,
   width: number,
   height: number,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { ResetButton } from "./ResetButton";
 import { Toggle } from "./Toggle";
+import { ButtonReset } from "./Buttons";
 
 interface ISliderProps {
   label: string;
@@ -10,12 +10,13 @@ interface ISliderProps {
   onChange: (value: number) => void;
   defaultValue?: number;
   isToggle?: boolean;
+  isToggleActive?: boolean;
   onReset?: () => void;
   onToggle?: (isToggle: boolean) => void;
 }
 
 export const Slider = (props: ISliderProps) => {
-  const [isToggle, setIsToggle] = useState<boolean>(false);
+  const [isToggle, setIsToggle] = useState<boolean>(props.isToggleActive ?? false);
   const [debouncedValue, setDebouncedValue] = useState<number | null>(props.value);
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export const Slider = (props: ISliderProps) => {
         />
       </div>
       {props.onReset && (
-        <ResetButton
+        <ButtonReset
           onReset={() => {
             props.onReset?.();
             setIsToggle(false);

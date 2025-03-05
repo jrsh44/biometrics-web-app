@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "./Buttons";
 
 interface IFilterProps {
   label: string;
@@ -11,18 +12,13 @@ export const Filter = (props: IFilterProps) => {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <button
-        className="flex w-full justify-center border-2 p-4 text-slate-200 border-gray-600 hover:border-slate-200 transition-all cursor-pointer"
-        onClick={() => props.onFilterApply(kernel)}
-      >
-        {props.label}
-      </button>
+      <Button label={props.label} onClick={() => props.onFilterApply(kernel)} />
       <div className={`grid grid-cols-${kernel[0].length} col-span-full border-collapse`}>
         {kernel.map((row, rowIndex) =>
           row.map((value, colIndex) => (
             <input
               key={`${rowIndex}-${colIndex}`}
-              className={`self-center text-center border border-gray-600 ${
+              className={`self-center text-center border border-gray-600 p-1 ${
                 rowIndex === 0 ? "border-t-0" : ""
               } ${colIndex === 0 ? "border-l-0" : ""} ${
                 rowIndex === kernel.length - 1 ? "border-b-0" : ""
