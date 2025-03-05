@@ -1,4 +1,4 @@
-export type TIconName = "revert";
+export type TIconName = "cross" | "download" | "revert";
 
 interface IIconProps {
   name: TIconName;

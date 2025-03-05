@@ -1,11 +1,11 @@
 @font-face {
   font-family: "icomoon";
-  src: url("icomoon.eot?9mqb8a");
+  src: url("icomoon.eot?o16r5");
   src:
-    url("icomoon.eot?9mqb8a#iefix") format("embedded-opentype"),
-    url("icomoon.ttf?9mqb8a") format("truetype"),
-    url("icomoon.woff?9mqb8a") format("woff"),
-    url("icomoon.svg?9mqb8a#icomoon") format("svg");
+    url("icomoon.eot?o16r5#iefix") format("embedded-opentype"),
+    url("icomoon.ttf?o16r5") format("truetype"),
+    url("icomoon.woff?o16r5") format("woff"),
+    url("icomoon.svg?o16r5#icomoon") format("svg");
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -15,7 +15,6 @@
 [class*=" icon-"] {
   /* use !important to prevent issues with browser extensions that change fonts */
   font-family: "icomoon" !important;
-  speak: never;
   font-style: normal;
   font-weight: normal;
   font-variant: normal;
@@ -29,4 +28,10 @@
 
 .icon-revert:before {
   content: "\e984";
+}
+.icon-download:before {
+  content: "\e9c7";
+}
+.icon-cross:before {
+  content: "\ea0f";
 }
