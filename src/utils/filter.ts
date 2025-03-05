@@ -5,15 +5,12 @@ export const defaultAverageKernel = [
 ];
 
 export const applyAverageFilter = (
-  ctx: CanvasRenderingContext2D,
+  data: Uint8ClampedArray,
   width: number,
   height: number,
   kernel: number[][] = defaultAverageKernel,
-) => {
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
+): Uint8ClampedArray => {
   const tempData = new Uint8ClampedArray(data);
-
   const kernelSize = kernel.length;
   const kernelSum = kernel.flat().reduce((sum, value) => sum + value, 0);
 
@@ -39,7 +36,7 @@ export const applyAverageFilter = (
     }
   }
 
-  ctx.putImageData(imageData, 0, 0);
+  return data;
 };
 
 export const defaultGaussianKernel = [
@@ -49,15 +46,12 @@ export const defaultGaussianKernel = [
 ];
 
 export const applyGaussianFilter = (
-  ctx: CanvasRenderingContext2D,
+  data: Uint8ClampedArray,
   width: number,
   height: number,
   kernel: number[][] = defaultGaussianKernel,
-) => {
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
+): Uint8ClampedArray => {
   const tempData = new Uint8ClampedArray(data);
-
   const kernelSize = kernel.length;
   const kernelSum = kernel.flat().reduce((sum, value) => sum + value, 0);
 
@@ -83,7 +77,7 @@ export const applyGaussianFilter = (
     }
   }
 
-  ctx.putImageData(imageData, 0, 0);
+  return data;
 };
 
 export const defaultSharpenKernel = [
@@ -93,15 +87,12 @@ export const defaultSharpenKernel = [
 ];
 
 export const applySharpenFilter = (
-  ctx: CanvasRenderingContext2D,
+  data: Uint8ClampedArray,
   width: number,
   height: number,
   kernel: number[][] = defaultSharpenKernel,
-) => {
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
+): Uint8ClampedArray => {
   const tempData = new Uint8ClampedArray(data);
-
   const kernelSize = kernel.length;
 
   for (let y = 1; y < height - 1; y++) {
@@ -126,5 +117,5 @@ export const applySharpenFilter = (
     }
   }
 
-  ctx.putImageData(imageData, 0, 0);
+  return data;
 };
