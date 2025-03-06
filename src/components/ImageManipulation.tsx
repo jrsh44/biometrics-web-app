@@ -26,6 +26,7 @@ import { FiltersTab } from "./FiltersTab";
 import { TImage, useImage } from "../utils/useImage";
 import { ButtonDelete, ButtonDownload, ButtonReset } from "./ui/Buttons";
 import { IFilterProps } from "./ui/Filter";
+import { HistogramTab } from "./HistogramTab";
 import { ProjectionTab } from "./ProjectionTab";
 
 interface ImageManipulationProps {
@@ -185,7 +186,7 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
                 {
                   tabId: "histogram",
                   label: "Histogram",
-                  content: <div>TODO</div>,
+                  content: <HistogramTab data={props.image.data} />,
                 },
                 {
                   tabId: "projection",
