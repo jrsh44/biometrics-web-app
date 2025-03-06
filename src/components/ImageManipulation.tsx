@@ -26,6 +26,7 @@ import { FiltersTab } from "./FiltersTab";
 import { TImage, useImage } from "../utils/useImage";
 import { ButtonDelete, ButtonDownload, ButtonReset } from "./ui/Buttons";
 import { IFilterProps } from "./ui/Filter";
+import { ProjectionTab } from "./ProjectionTab";
 
 interface ImageManipulationProps {
   image: TImage;
@@ -189,7 +190,13 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
                 {
                   tabId: "projection",
                   label: "Projekcja",
-                  content: <div>TODO</div>,
+                  content: (
+                    <ProjectionTab
+                      data={props.image.data}
+                      height={props.image.height}
+                      width={props.image.width}
+                    />
+                  ),
                 },
               ]}
             />
