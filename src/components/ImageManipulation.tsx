@@ -9,16 +9,23 @@ import {
 import {
   applyAverageFilter,
   applyGaussianFilter,
+  applyRobertsCrossFilter,
   applySharpenFilter,
+  applySobelFilter,
   defaultAverageKernel,
   defaultGaussianKernel,
+  defaultRobertsCrossKernelX,
+  defaultRobertsCrossKernelY,
   defaultSharpenKernel,
+  defaultSobelKernelX,
+  defaultSobelKernelY,
 } from "../utils/filter";
 import { Tabs } from "./ui/Tabs";
 import { BasicToolsTab } from "./BasicToolsTab";
-import { FiltersTab, TFilter } from "./FiltersTab";
+import { FiltersTab } from "./FiltersTab";
 import { TImage, useImage } from "../utils/useImage";
 import { ButtonDelete, ButtonDownload, ButtonReset } from "./ui/Buttons";
+import { IFilterProps } from "./ui/Filter";
 
 interface ImageManipulationProps {
   image: TImage;
@@ -40,7 +47,7 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
   useEffect(() => {
     if (props.image && canvasRef.current) {
       const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (ctx) {
         canvas.width = props.image.width;
         canvas.height = props.image.height;
@@ -92,21 +99,33 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
     ctx.putImageData(imageData, 0, 0);
   };
 
-  const filters: TFilter[] = [
+  const filters: IFilterProps[] = [
     {
       label: "Filtr uśredniający",
-      defaultKernel: defaultAverageKernel,
-      onFilterApply: (kernel) => applyFilter(props.image.id, applyAverageFilter, kernel),
+      defaultKernels: [defaultAverageKernel],
+      onFilterApply: (kernels) => applyFilter(props.image.id, applyAverageFilter, kernels),
     },
     {
       label: "Filtr Gaussa",
-      defaultKernel: defaultGaussianKernel,
-      onFilterApply: (kernel) => applyFilter(props.image.id, applyGaussianFilter, kernel),
+      defaultKernels: [defaultGaussianKernel],
+      onFilterApply: (kernels) => applyFilter(props.image.id, applyGaussianFilter, kernels),
     },
     {
       label: "Wyostrzanie",
-      defaultKernel: defaultSharpenKernel,
-      onFilterApply: (kernel) => applyFilter(props.image.id, applySharpenFilter, kernel),
+      defaultKernels: [defaultSharpenKernel],
+      onFilterApply: (kernels) => applyFilter(props.image.id, applySharpenFilter, kernels),
+    },
+    {
+      label: "Filtr Robert Cross",
+      defaultKernels: [defaultRobertsCrossKernelX, defaultRobertsCrossKernelY],
+      onFilterApply: (kernels) => applyFilter(props.image.id, applyRobertsCrossFilter, kernels),
+      kernelsDescription: ["Poziomy", "Pionowy"],
+    },
+    {
+      label: "Filtr Sobela",
+      defaultKernels: [defaultSobelKernelX, defaultSobelKernelY],
+      onFilterApply: (kernels) => applyFilter(props.image.id, applySobelFilter, kernels),
+      kernelsDescription: ["Poziomy", "Pionowy"],
     },
   ];
 
@@ -161,6 +180,16 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
                   tabId: "filters",
                   label: "Filtry",
                   content: <FiltersTab filters={filters} />,
+                },
+                {
+                  tabId: "histogram",
+                  label: "Histogram",
+                  content: <div>TODO</div>,
+                },
+                {
+                  tabId: "projection",
+                  label: "Projekcja",
+                  content: <div>TODO</div>,
                 },
               ]}
             />

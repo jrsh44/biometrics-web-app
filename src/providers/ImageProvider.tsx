@@ -108,12 +108,12 @@ export const ImageProvider: FC<PropsWithChildren> = ({ children }) => {
     );
   };
 
-  const applyFilter = (id: string, filter: TApplyFilter, kernel: number[][]) => {
+  const applyFilter = (id: string, filter: TApplyFilter, kernels: number[][][]) => {
     setImages((prevImages) => {
       const image = prevImages.find((image) => image.id === id);
       if (!image) return prevImages;
       const tempData = new Uint8ClampedArray(image.data);
-      const data = filter(tempData, image.width, image.height, kernel);
+      const data = filter(tempData, image.width, image.height, kernels);
       return prevImages.map((image) => (image.id === id ? { ...image, data } : image));
     });
   };

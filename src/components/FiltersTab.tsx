@@ -1,13 +1,7 @@
-import { Filter } from "./ui/Filter";
-
-export type TFilter = {
-  label: string;
-  defaultKernel: number[][];
-  onFilterApply: (kernel: number[][]) => void;
-};
+import { Filter, IFilterProps } from "./ui/Filter";
 
 interface IFiltersTabProps {
-  filters: TFilter[];
+  filters: IFilterProps[];
 }
 
 export const FiltersTab = (props: IFiltersTabProps) => {
@@ -16,9 +10,10 @@ export const FiltersTab = (props: IFiltersTabProps) => {
       {props.filters.map((filter) => (
         <Filter
           key={filter.label}
-          defaultKernel={filter.defaultKernel}
           label={filter.label}
+          defaultKernels={filter.defaultKernels}
           onFilterApply={filter.onFilterApply}
+          kernelsDescription={filter.kernelsDescription}
         />
       ))}
     </div>

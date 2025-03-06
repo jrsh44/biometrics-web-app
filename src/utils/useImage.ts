@@ -23,7 +23,7 @@ interface IImageContext {
   changeThreshold: (id: string, value: number | null) => void;
   changeNegative: (id: string, value: boolean | null) => void;
   changeGrayscale: (id: string, value: boolean | null) => void;
-  applyFilter: (id: string, filter: TApplyFilter, kernel: number[][]) => void;
+  applyFilter: (id: string, filter: TApplyFilter, kernels: number[][][]) => void;
   images: TImage[];
 }
 
