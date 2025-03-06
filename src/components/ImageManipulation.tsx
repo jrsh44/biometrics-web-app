@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   applyGrayscale,
   applyBrightness,
@@ -35,6 +35,7 @@ interface ImageManipulationProps {
 
 export const ImageManipulation = (props: ImageManipulationProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [processedData, setProcessedData] = useState<Uint8ClampedArray>(props.image.data);
   const {
     changeBrightness,
     changeContrast,
@@ -98,6 +99,7 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
       data[i + 2] = b;
     }
 
+    setProcessedData(data);
     ctx.putImageData(imageData, 0, 0);
   };
 
@@ -186,14 +188,14 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
                 {
                   tabId: "histogram",
                   label: "Histogram",
-                  content: <HistogramTab data={props.image.data} />,
+                  content: <HistogramTab data={processedData} />,
                 },
                 {
                   tabId: "projection",
                   label: "Projekcja",
                   content: (
                     <ProjectionTab
-                      data={props.image.data}
+                      data={processedData}
                       height={props.image.height}
                       width={props.image.width}
                     />
