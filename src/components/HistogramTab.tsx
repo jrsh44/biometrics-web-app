@@ -1,40 +1,46 @@
 import { useState, useEffect, useRef } from "react";
-import { BarChart, Bar, XAxis, YAxis, Legend, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+
+type THistogramData = {
+  bin: number;
+  red: number;
+  green: number;
+  blue: number;
+}[];
 
 interface IHistogramTabProps {
-    data: Uint8ClampedArray;
+  data: Uint8ClampedArray;
 }
 
 export const HistogramTab = (prosp: IHistogramTabProps) => {
-  const [histogramData, setHistogramData] = useState<{ bin: number; red: number; green: number; blue: number }[]>([]);
+  const [histogramData, setHistogramData] = useState<THistogramData>([]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    const redHist = new Array(256).fill(0);
+    const greenHist = new Array(256).fill(0);
+    const blueHist = new Array(256).fill(0);
 
-      const redHist = new Array(256).fill(0);
-      const greenHist = new Array(256).fill(0);
-      const blueHist = new Array(256).fill(0);
+    for (let i = 0; i < prosp.data.length; i += 4) {
+      const r = prosp.data[i];
+      const g = prosp.data[i + 1];
+      const b = prosp.data[i + 2];
 
-      for (let i = 0; i < prosp.data.length; i += 4) {
-        const r = prosp.data[i];     
-        const g = prosp.data[i + 1]; 
-        const b = prosp.data[i + 2]; 
+      redHist[r]++;
+      greenHist[g]++;
+      blueHist[b]++;
+    }
 
-        redHist[r]++;
-        greenHist[g]++;
-        blueHist[b]++;
-      }
+    const histData = redHist.map((_, i) => ({
+      bin: i,
+      red: redHist[i],
+      green: greenHist[i],
+      blue: blueHist[i],
+    }));
 
-      const histData = redHist.map((_, i) => ({
-        bin: i,
-        red: redHist[i],
-        green: greenHist[i],
-        blue: blueHist[i],
-      }));
-
-      setHistogramData(histData);
+    setHistogramData(histData);
   }, [prosp.data]);
 
   return (
@@ -42,24 +48,20 @@ export const HistogramTab = (prosp: IHistogramTabProps) => {
       <canvas ref={canvasRef} className="hidden" />
 
       {prosp.data && (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <h3 className="text-xl font-semibold mb-2">Histogram RGB</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={histogramData}>
-                <XAxis dataKey="bin" tick={{ fontSize: 10 }} />
-                <YAxis />
-                <Legend />
-                <Tooltip />
-                <Bar dataKey="red" fill="red" />
-                <Bar dataKey="green" fill="green" />
-                <Bar dataKey="blue" fill="blue" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="grid grid-cols-1 gap-4">
+          <h3 className="text-xl font-semibold mb-2">Histogram RGB</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={histogramData}>
+              <XAxis dataKey="bin" tick={{ fontSize: 10 }} />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="red" fill="red" />
+              <Bar dataKey="green" fill="green" />
+              <Bar dataKey="blue" fill="blue" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
     </div>
   );
 };
-

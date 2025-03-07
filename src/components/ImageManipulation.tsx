@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   applyGrayscale,
   applyBrightness,
@@ -64,44 +64,47 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
     }
   }, [props.image]);
 
-  const applyFilters = (ctx: CanvasRenderingContext2D | null, width: number, height: number) => {
-    if (!ctx) return;
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
+  const applyFilters = useCallback(
+    (ctx: CanvasRenderingContext2D | null, width: number, height: number) => {
+      if (!ctx) return;
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
 
-    for (let i = 0; i < data.length; i += 4) {
-      let r = data[i];
-      let g = data[i + 1];
-      let b = data[i + 2];
+      for (let i = 0; i < data.length; i += 4) {
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
 
-      if (props.image.isGrayscale) {
-        [r, g, b] = applyGrayscale(r, g, b);
+        if (props.image.isGrayscale) {
+          [r, g, b] = applyGrayscale(r, g, b);
+        }
+
+        if (props.image.brightness !== null) {
+          [r, g, b] = applyBrightness(r, g, b, props.image.brightness);
+        }
+
+        if (props.image.contrast !== null) {
+          [r, g, b] = applyContrast(r, g, b, props.image.contrast);
+        }
+
+        if (props.image.isNegative) {
+          [r, g, b] = applyNegative(r, g, b);
+        }
+
+        if (props.image.threshold !== null) {
+          [r, g, b] = applyBinarization(r, g, b, props.image.threshold);
+        }
+
+        data[i] = r;
+        data[i + 1] = g;
+        data[i + 2] = b;
       }
 
-      if (props.image.brightness !== null) {
-        [r, g, b] = applyBrightness(r, g, b, props.image.brightness);
-      }
-
-      if (props.image.contrast !== null) {
-        [r, g, b] = applyContrast(r, g, b, props.image.contrast);
-      }
-
-      if (props.image.isNegative) {
-        [r, g, b] = applyNegative(r, g, b);
-      }
-
-      if (props.image.threshold !== null) {
-        [r, g, b] = applyBinarization(r, g, b, props.image.threshold);
-      }
-
-      data[i] = r;
-      data[i + 1] = g;
-      data[i + 2] = b;
-    }
-
-    setProcessedData(data);
-    ctx.putImageData(imageData, 0, 0);
-  };
+      setProcessedData(new Uint8ClampedArray(data));
+      ctx.putImageData(imageData, 0, 0);
+    },
+    [props.image],
+  );
 
   const filters: IFilterProps[] = [
     {
@@ -133,7 +136,7 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
     },
   ];
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     if (canvasRef.current) {
       const canvas = canvasRef.current;
       const link = document.createElement("a");
@@ -141,7 +144,7 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
       link.download = "image.png";
       link.click();
     }
-  };
+  }, []);
 
   return (
     props.image && (

@@ -16,7 +16,7 @@ export const Tabs = (props: ITabsProps) => {
 
   return (
     <div>
-      <div className="flex w-full">
+      <div className="flex w-full select-none">
         {props.tabs.map((tab) => (
           <button
             key={tab.tabId}

@@ -28,10 +28,10 @@ export const ProjectionTab = (props: IProjecttionTabProps) => {
           vProj[x]++;
         }
       }
-
-      setHorizontalProjection(hProj);
-      setVerticalProjection(vProj);
     }
+
+    setHorizontalProjection(hProj);
+    setVerticalProjection(vProj);
   }, [props.data, props.width, props.height]);
 
   return (
@@ -39,23 +39,22 @@ export const ProjectionTab = (props: IProjecttionTabProps) => {
       <canvas ref={canvasRef} className="hidden" />
 
       {props.data && (
-        <div className="grid grid-cols-2 gap-4">
-          <h3>Projekcja pozioma</h3>
-          <ResponsiveContainer width="100%" height={150}>
+        <div className="grid grid-cols-1 gap-4">
+          <h3 className="text-xl font-semibold mb-2">Projekcja pozioma</h3>
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart data={horizontalProjection.map((value, index) => ({ index, value }))}>
               <XAxis dataKey="index" hide />
-              <YAxis />
+              <YAxis tickCount={5} />
               <Bar dataKey="value" fill="#8884d8" />
             </BarChart>
           </ResponsiveContainer>
-
-          <h3>Projekcja pionowa</h3>
-          <ResponsiveContainer width="100%" height={150}>
+          <h3 className="text-xl font-semibold mb-2">Projekcja pionowa</h3>
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart
               layout="vertical"
               data={verticalProjection.map((value, index) => ({ index, value }))}
             >
-              <XAxis />
+              <XAxis tickCount={4} />
               <YAxis dataKey="index" hide />
               <Bar dataKey="value" fill="#82ca9d" />
             </BarChart>
