@@ -1,4 +1,4 @@
-import { Filter, IFilterProps } from "./ui/Filter";
+import { Filter, IFilterProps } from "../../ui/Filter";
 
 interface IFiltersTabProps {
   filters: IFilterProps[];

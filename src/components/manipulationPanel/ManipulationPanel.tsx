@@ -5,7 +5,7 @@ import {
   applyContrast,
   applyNegative,
   applyBinarization,
-} from "../utils/manipulate";
+} from "../../utils/manipulate";
 import {
   applyRobertsCrossFilter,
   applySobelFilter,
@@ -17,21 +17,21 @@ import {
   defaultSharpenKernel,
   defaultSobelKernelX,
   defaultSobelKernelY,
-} from "../utils/filter";
-import { Tabs } from "./ui/Tabs";
-import { BasicToolsTab } from "./BasicToolsTab";
-import { FiltersTab } from "./FiltersTab";
-import { TImage, useImage } from "../utils/useImage";
-import { ButtonDelete, ButtonDownload, ButtonReset } from "./ui/Buttons";
-import { IFilterProps } from "./ui/Filter";
-import { HistogramTab } from "./HistogramTab";
-import { ProjectionTab } from "./ProjectionTab";
+} from "../../utils/filter";
+import { Tabs } from "../ui/Tabs";
+import { BasicToolsTab } from "./tabs/BasicToolsTab";
+import { FiltersTab } from "./tabs/FiltersTab";
+import { TImage, useImage } from "../../utils/useImage";
+import { ButtonDelete, ButtonDownload, ButtonReset } from "../ui/Buttons";
+import { IFilterProps } from "../ui/Filter";
+import { HistogramTab } from "./tabs/HistogramTab";
+import { ProjectionTab } from "./tabs/ProjectionTab";
 
-interface ImageManipulationProps {
+interface IManipulationPanelProps {
   image: TImage;
 }
 
-export const ImageManipulation = (props: ImageManipulationProps) => {
+export const ManipulationPanel = (props: IManipulationPanelProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [processedData, setProcessedData] = useState<Uint8ClampedArray>(props.image.data);
   const {

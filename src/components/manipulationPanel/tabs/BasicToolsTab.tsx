@@ -1,5 +1,5 @@
-import { Slider } from "./ui/Slider";
-import { Toggle } from "./ui/Toggle";
+import { Slider } from "../../ui/Slider";
+import { Toggle } from "../../ui/Toggle";
 
 interface IBasicToolsTabProps {
   brightness: number | null;

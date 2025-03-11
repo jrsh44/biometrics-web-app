@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ImageManipulation } from "../components/ImageManipulation";
+import { ManipulationPanel } from "../components/manipulationPanel";
 import { ImageInputText } from "../components/ui/ImageInputText";
 import { useImage } from "../utils/useImage";
 import { Button } from "../components/ui/Buttons";
@@ -112,7 +112,7 @@ export const App = () => {
         </div>
         {images.length > 0 &&
           images.map((image) => (
-            <ImageManipulation key={`image-manipulation-${image.id}`} image={image} />
+            <ManipulationPanel key={`image-manipulation-${image.id}`} image={image} />
           ))}
       </div>
     </div>
