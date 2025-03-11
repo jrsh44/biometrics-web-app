@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, Bar, BarChart } from "recharts";
 
 type THistogramData = {
   bin: number;
@@ -44,24 +44,21 @@ export const HistogramTab = (prosp: IHistogramTabProps) => {
   }, [prosp.data]);
 
   return (
-    <div className="p-4">
+    <div className="flex flex-col items-center  pt-4">
       <canvas ref={canvasRef} className="hidden" />
-
-      {prosp.data && (
-        <div className="grid grid-cols-1 gap-4">
-          <h3 className="text-xl font-semibold mb-2">Histogram RGB</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={histogramData}>
-              <XAxis dataKey="bin" tick={{ fontSize: 10 }} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="red" fill="red" />
-              <Bar dataKey="green" fill="green" />
-              <Bar dataKey="blue" fill="blue" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      <div className="w-full">
+        <h2 className="text-center text-lg font-semibold pb-4">Histogram RGB</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={histogramData}>
+            <XAxis dataKey="bin" tick={{ fontSize: 10 }} />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="red" fill="red" />
+            <Bar dataKey="green" fill="green" />
+            <Bar dataKey="blue" fill="blue" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };
