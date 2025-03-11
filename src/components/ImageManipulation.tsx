@@ -7,11 +7,9 @@ import {
   applyBinarization,
 } from "../utils/manipulate";
 import {
-  applyAverageFilter,
-  applyGaussianFilter,
   applyRobertsCrossFilter,
-  applySharpenFilter,
   applySobelFilter,
+  applyWeightedMeanFilter,
   defaultAverageKernel,
   defaultGaussianKernel,
   defaultRobertsCrossKernelX,
@@ -110,17 +108,20 @@ export const ImageManipulation = (props: ImageManipulationProps) => {
     {
       label: "Filtr uśredniający",
       defaultKernels: [defaultAverageKernel],
-      onFilterApply: (kernels) => applyFilter(props.image.id, applyAverageFilter, kernels),
+      onFilterApply: (kernels) => applyFilter(props.image.id, applyWeightedMeanFilter, kernels),
+      // hideKernels: true,
     },
     {
       label: "Filtr Gaussa",
       defaultKernels: [defaultGaussianKernel],
-      onFilterApply: (kernels) => applyFilter(props.image.id, applyGaussianFilter, kernels),
+      onFilterApply: (kernels) => applyFilter(props.image.id, applyWeightedMeanFilter, kernels),
+      // hideKernels: true,
     },
     {
       label: "Wyostrzanie",
       defaultKernels: [defaultSharpenKernel],
-      onFilterApply: (kernels) => applyFilter(props.image.id, applySharpenFilter, kernels),
+      onFilterApply: (kernels) => applyFilter(props.image.id, applyWeightedMeanFilter, kernels),
+      // hideKernels: true,
     },
     {
       label: "Filtr Robert Cross",

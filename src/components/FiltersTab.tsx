@@ -14,6 +14,7 @@ export const FiltersTab = (props: IFiltersTabProps) => {
           defaultKernels={filter.defaultKernels}
           onFilterApply={filter.onFilterApply}
           kernelsDescription={filter.kernelsDescription}
+          hideKernels={filter.hideKernels}
         />
       ))}
     </div>

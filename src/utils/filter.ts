@@ -11,83 +11,11 @@ export const defaultAverageKernel = [
   [1, 1, 1],
 ];
 
-export const applyAverageFilter: TApplyFilter = (
-  data: Uint8ClampedArray,
-  width: number,
-  height: number,
-  kernels: number[][][] = [defaultAverageKernel],
-): Uint8ClampedArray => {
-  const kernel = kernels[0];
-  const tempData = new Uint8ClampedArray(data);
-  const kernelSize = kernel.length;
-  const kernelSum = kernel.flat().reduce((sum, value) => sum + value, 0);
-
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      let r = 0,
-        g = 0,
-        b = 0;
-
-      for (let ky = 0; ky < kernelSize; ky++) {
-        for (let kx = 0; kx < kernelSize; kx++) {
-          const pixelIndex = ((y + ky - 1) * width + (x + kx - 1)) * 4;
-          r += tempData[pixelIndex] * kernel[ky][kx];
-          g += tempData[pixelIndex + 1] * kernel[ky][kx];
-          b += tempData[pixelIndex + 2] * kernel[ky][kx];
-        }
-      }
-
-      const index = (y * width + x) * 4;
-      data[index] = r / kernelSum;
-      data[index + 1] = g / kernelSum;
-      data[index + 2] = b / kernelSum;
-    }
-  }
-
-  return data;
-};
-
 export const defaultGaussianKernel = [
   [1, 2, 1],
   [2, 4, 2],
   [1, 2, 1],
 ];
-
-export const applyGaussianFilter: TApplyFilter = (
-  data: Uint8ClampedArray,
-  width: number,
-  height: number,
-  kernels: number[][][] = [defaultGaussianKernel],
-): Uint8ClampedArray => {
-  const kernel = kernels[0];
-  const tempData = new Uint8ClampedArray(data);
-  const kernelSize = kernel.length;
-  const kernelSum = kernel.flat().reduce((sum, value) => sum + value, 0);
-
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      let r = 0,
-        g = 0,
-        b = 0;
-
-      for (let ky = 0; ky < kernelSize; ky++) {
-        for (let kx = 0; kx < kernelSize; kx++) {
-          const pixelIndex = ((y + ky - 1) * width + (x + kx - 1)) * 4;
-          r += tempData[pixelIndex] * kernel[ky][kx];
-          g += tempData[pixelIndex + 1] * kernel[ky][kx];
-          b += tempData[pixelIndex + 2] * kernel[ky][kx];
-        }
-      }
-
-      const index = (y * width + x) * 4;
-      data[index] = r / kernelSum;
-      data[index + 1] = g / kernelSum;
-      data[index + 2] = b / kernelSum;
-    }
-  }
-
-  return data;
-};
 
 export const defaultSharpenKernel = [
   [0, -1, 0],
@@ -95,39 +23,45 @@ export const defaultSharpenKernel = [
   [0, -1, 0],
 ];
 
-export const applySharpenFilter: TApplyFilter = (
+export const applyWeightedMeanFilter: TApplyFilter = (
   data: Uint8ClampedArray,
   width: number,
   height: number,
-  kernels: number[][][] = [defaultSharpenKernel],
+  kernels: number[][][],
 ): Uint8ClampedArray => {
   const kernel = kernels[0];
-  const tempData = new Uint8ClampedArray(data);
+  const newData = new Uint8ClampedArray(data);
   const kernelSize = kernel.length;
 
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      let r = 0,
-        g = 0,
-        b = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let [r, g, b, countR, countG, countB] = [0, 0, 0, 0, 0, 0];
 
       for (let ky = 0; ky < kernelSize; ky++) {
         for (let kx = 0; kx < kernelSize; kx++) {
-          const pixelIndex = ((y + ky - 1) * width + (x + kx - 1)) * 4;
-          r += tempData[pixelIndex] * kernel[ky][kx];
-          g += tempData[pixelIndex + 1] * kernel[ky][kx];
-          b += tempData[pixelIndex + 2] * kernel[ky][kx];
+          const ny = y + ky - Math.floor(kernelSize / 2);
+          const nx = x + kx - Math.floor(kernelSize / 2);
+
+          if (ny < 0 || ny >= height || nx < 0 || nx >= width) continue;
+          const pixelIndex = (ny * width + nx) * 4;
+
+          r += data[pixelIndex] * kernel[ky][kx];
+          g += data[pixelIndex + 1] * kernel[ky][kx];
+          b += data[pixelIndex + 2] * kernel[ky][kx];
+          countR += kernel[ky][kx];
+          countG += kernel[ky][kx];
+          countB += kernel[ky][kx];
         }
       }
 
       const index = (y * width + x) * 4;
-      data[index] = r;
-      data[index + 1] = g;
-      data[index + 2] = b;
+      newData[index] = r / countR;
+      newData[index + 1] = g / countG;
+      newData[index + 2] = b / countB;
     }
   }
 
-  return data;
+  return newData;
 };
 
 export const defaultRobertsCrossKernelX = [
@@ -153,8 +87,7 @@ export const applyRobertsCrossFilter: TApplyFilter = (
 
   for (let y = 0; y < height - 1; y++) {
     for (let x = 0; x < width - 1; x++) {
-      let gx = 0,
-        gy = 0;
+      let [gx, gy] = [0, 0];
 
       for (let ky = 0; ky < kernelSize; ky++) {
         for (let kx = 0; kx < kernelSize; kx++) {
@@ -200,8 +133,7 @@ export const applySobelFilter = (
 
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
-      let gx = 0,
-        gy = 0;
+      let [gx, gy] = [0, 0];
 
       for (let ky = 0; ky < kernelSize; ky++) {
         for (let kx = 0; kx < kernelSize; kx++) {
