@@ -7,6 +7,7 @@ import {
   applyBinarization,
 } from "../../utils/manipulate";
 import {
+  applyCannyFilter,
   applyRobertsCrossFilter,
   applySobelFilter,
   applyWeightedMeanFilter,
@@ -134,6 +135,11 @@ export const ManipulationPanel = (props: IManipulationPanelProps) => {
       defaultKernels: [defaultSobelKernelX, defaultSobelKernelY],
       onFilterApply: (kernels) => applyFilter(props.image.id, applySobelFilter, kernels),
       kernelsDescription: ["Poziomy", "Pionowy"],
+    },
+    {
+      label: "Canny",
+      defaultKernels: [defaultGaussianKernel],
+      onFilterApply: (kernels) => applyFilter(props.image.id, applyCannyFilter, kernels),
     },
   ];
 
