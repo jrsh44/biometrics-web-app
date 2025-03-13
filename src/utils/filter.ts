@@ -103,7 +103,6 @@ export const applyRobertsCrossFilter: TApplyFilter = (
           }
           const pixelIndex = (ny * width + nx) * 4;
 
-          // const pixelIndex = ((y + ky) * width + (x + kx)) * 4;
           gx += tempData[pixelIndex] * kernelX[ky][kx];
           gy += tempData[pixelIndex] * kernelY[ky][kx];
         }
@@ -162,7 +161,6 @@ export const applySobelFilter = (
           }
           const pixelIndex = (ny * width + nx) * 4;
 
-          // const pixelIndex = ((y + ky - 1) * width + (x + kx - 1)) * 4;
           gx += tempData[pixelIndex] * kernelX[ky][kx];
           gy += tempData[pixelIndex] * kernelY[ky][kx];
         }
@@ -229,104 +227,151 @@ export const getGradientFromSobelFilter = (
   return { gradientX, gradientY };
 };
 
-export const applyCannyFilter: TApplyFilter = (
-  data: Uint8ClampedArray,
-  width: number,
-  height: number,
-  kernels = [defaultGaussianKernel],
-): Uint8ClampedArray => {
-  
-  // 1
-  const blurredData = applyWeightedMeanFilter(data, width, height, kernels);
+export const applyCannyFilter: TApplyFilter = (data, width, height) => {
+  const conv2D = (img: number[][], kernel: number[][]): number[][] => {
+    const h = img.length;
+    const w = img[0].length;
+    const k = kernel.length;
+    const pad = Math.floor(k / 2);
 
-  // 2
-  const { gradientX, gradientY } = getGradientFromSobelFilter(blurredData, width, height);
+    const paddedImg = Array.from({ length: h + 2 * pad }, (_, i) =>
+      Array.from({ length: w + 2 * pad }, (_, j) =>
+        i >= pad && i < h + pad && j >= pad && j < w + pad ? img[i - pad][j - pad] : 0,
+      ),
+    );
 
-  // 3.
-  const magnitude = new Uint8ClampedArray(width * height);
-  const direction = new Uint8ClampedArray(width * height);
-  for (let i = 0; i < width * height; i++) {
-    const gx = gradientX[i * 4];
-    const gy = gradientY[i * 4];
-    magnitude[i] = Math.sqrt(gx * gx + gy * gy);
-    direction[i] = Math.atan2(gy, gx);
-  }
+    const result: number[][] = Array.from({ length: h }, () => Array(w).fill(0));
 
-  // 4.
-  const suppressed = new Uint8ClampedArray(width * height);
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      const i = y * width + x;
-      const angle = direction[i];
-      let q = 255;
-      let r = 255;
-
-      if (
-        (angle > -Math.PI / 8 && angle <= Math.PI / 8) ||
-        (angle > (7 * Math.PI) / 8 && angle <= Math.PI) ||
-        (angle >= -Math.PI && angle <= (-7 * Math.PI) / 8)
-      ) {
-        q = magnitude[y * width + (x + 1)];
-        r = magnitude[y * width + (x - 1)];
-      } else if (
-        (angle > Math.PI / 8 && angle <= (3 * Math.PI) / 8) ||
-        (angle > (-7 * Math.PI) / 8 && angle <= (-5 * Math.PI) / 8)
-      ) {
-        q = magnitude[(y + 1) * width + (x - 1)];
-        r = magnitude[(y - 1) * width + (x + 1)];
-      } else if (
-        (angle > (3 * Math.PI) / 8 && angle <= (5 * Math.PI) / 8) ||
-        (angle > (-5 * Math.PI) / 8 && angle <= (-3 * Math.PI) / 8)
-      ) {
-        q = magnitude[(y + 1) * width + x];
-        r = magnitude[(y - 1) * width + x];
-      } else if (
-        (angle > (5 * Math.PI) / 8 && angle <= (7 * Math.PI) / 8) ||
-        (angle > (-3 * Math.PI) / 8 && angle <= -Math.PI / 8)
-      ) {
-        q = magnitude[(y - 1) * width + (x - 1)];
-        r = magnitude[(y + 1) * width + (x + 1)];
-      }
-
-      if (magnitude[i] >= q && magnitude[i] >= r) {
-        suppressed[i] = magnitude[i];
-      } else {
-        suppressed[i] = 0;
+    for (let i = pad; i < h + pad; i++) {
+      for (let j = pad; j < w + pad; j++) {
+        let sum = 0;
+        for (let ki = 0; ki < k; ki++) {
+          for (let kj = 0; kj < k; kj++) {
+            sum += paddedImg[i - pad + ki][j - pad + kj] * kernel[ki][kj];
+          }
+        }
+        result[i - pad][j - pad] = sum;
       }
     }
-  }
 
-  // 5.
-  const thresholdLow = 10;
-  const thresholdHigh = 100;
-  const result = new Uint8ClampedArray(width * height * 4);
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      const i = y * width + x;
-      if (suppressed[i] >= thresholdHigh) {
-        result[i * 4] = 255;
-        result[i * 4 + 1] = 255;
-        result[i * 4 + 2] = 255;
-        result[i * 4 + 3] = 255;
-      } else if (suppressed[i] >= thresholdLow) {
-        if (
-          suppressed[(y + 1) * width + x] >= thresholdHigh ||
-          suppressed[(y - 1) * width + x] >= thresholdHigh ||
-          suppressed[y * width + (x + 1)] >= thresholdHigh ||
-          suppressed[y * width + (x - 1)] >= thresholdHigh ||
-          suppressed[(y + 1) * width + (x + 1)] >= thresholdHigh ||
-          suppressed[(y + 1) * width + (x - 1)] >= thresholdHigh ||
-          suppressed[(y - 1) * width + (x + 1)] >= thresholdHigh ||
-          suppressed[(y - 1) * width + (x - 1)] >= thresholdHigh
-        ) {
-          result[i * 4] = 255;
-          result[i * 4 + 1] = 255;
-          result[i * 4 + 2] = 255;
-          result[i * 4 + 3] = 255;
+    return result;
+  };
+
+  const sobelFilter = (img: number[][]) => {
+    const kx = [
+      [-1, 0, 1],
+      [-2, 0, 2],
+      [-1, 0, 1],
+    ];
+    const ky = [
+      [1, 2, 1],
+      [0, 0, 0],
+      [-1, -2, -1],
+    ];
+
+    const gx = conv2D(img, kx);
+    const gy = conv2D(img, ky);
+
+    const g = gx.map((row, i) => row.map((val, j) => Math.hypot(val, gy[i][j])));
+    const theta = gx.map((row, i) => row.map((val, j) => Math.atan2(gy[i][j], val)));
+
+    return { gx, gy, g, theta };
+  };
+
+  const nms = (g: number[][], theta: number[][]): number[][] => {
+    const h = g.length;
+    const w = g[0].length;
+    const result = Array.from({ length: h }, () => Array(w).fill(0));
+
+    for (let i = 1; i < h - 1; i++) {
+      for (let j = 1; j < w - 1; j++) {
+        const angle = ((theta[i][j] * 180) / Math.PI + 180) % 180;
+
+        let q = 255;
+        let r = 255;
+
+        if ((angle >= 0 && angle < 22.5) || (angle >= 157.5 && angle <= 180)) {
+          q = g[i][j + 1];
+          r = g[i][j - 1];
+        } else if (angle >= 22.5 && angle < 67.5) {
+          q = g[i + 1][j - 1];
+          r = g[i - 1][j + 1];
+        } else if (angle >= 67.5 && angle < 112.5) {
+          q = g[i + 1][j];
+          r = g[i - 1][j];
+        } else if (angle >= 112.5 && angle < 157.5) {
+          q = g[i - 1][j - 1];
+          r = g[i + 1][j + 1];
+        }
+
+        if (g[i][j] >= q && g[i][j] >= r) {
+          result[i][j] = g[i][j];
         }
       }
     }
-  }
+
+    return result;
+  };
+
+  const threshold = (
+    img: number[][],
+    low: number,
+    high: number,
+  ): { res: number[][]; weak: number; strong: number } => {
+    const weak = 25;
+    const strong = 255;
+
+    const res = img.map((row) => row.map((val) => (val >= high ? strong : val >= low ? weak : 0)));
+
+    return { res, weak, strong };
+  };
+
+  const hysteresis = (img: number[][], weak: number, strong: number): number[][] => {
+    const h = img.length;
+    const w = img[0].length;
+
+    for (let i = 1; i < h - 1; i++) {
+      for (let j = 1; j < w - 1; j++) {
+        if (img[i][j] === weak) {
+          if (
+            [
+              img[i - 1][j - 1],
+              img[i - 1][j],
+              img[i - 1][j + 1],
+              img[i][j - 1],
+              img[i][j + 1],
+              img[i + 1][j - 1],
+              img[i + 1][j],
+              img[i + 1][j + 1],
+            ].includes(strong)
+          ) {
+            img[i][j] = strong;
+          } else {
+            img[i][j] = 0;
+          }
+        }
+      }
+    }
+
+    return img;
+  };
+
+  const grayscale = Array.from({ length: height }, (_, i) =>
+    Array.from({ length: width }, (_, j) => data[(i * width + j) * 4]),
+  );
+
+  const { g, theta } = sobelFilter(grayscale);
+  const suppressed = nms(g, theta);
+  const { res, weak, strong } = threshold(suppressed, 50, 100);
+  const final = hysteresis(res, weak, strong);
+
+  const result = new Uint8ClampedArray(width * height * 4);
+
+  final.flat().forEach((val, i) => {
+    const offset = i * 4;
+    result[offset] = result[offset + 1] = result[offset + 2] = val;
+    result[offset + 3] = 255;
+  });
 
   return result;
 };
