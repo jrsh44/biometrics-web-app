@@ -5,24 +5,6 @@ export type TApplyFilter = (
   kernels: number[][][],
 ) => Uint8ClampedArray;
 
-export const defaultAverageKernel = [
-  [1, 1, 1],
-  [1, 1, 1],
-  [1, 1, 1],
-];
-
-export const defaultGaussianKernel = [
-  [1, 2, 1],
-  [2, 4, 2],
-  [1, 2, 1],
-];
-
-export const defaultSharpenKernel = [
-  [0, -1, 0],
-  [-1, 5, -1],
-  [0, -1, 0],
-];
-
 export const applyWeightedMeanFilter: TApplyFilter = (
   data: Uint8ClampedArray,
   width: number,
@@ -64,21 +46,11 @@ export const applyWeightedMeanFilter: TApplyFilter = (
   return newData;
 };
 
-export const defaultRobertsCrossKernelX = [
-  [1, 0],
-  [0, -1],
-];
-
-export const defaultRobertsCrossKernelY = [
-  [0, 1],
-  [-1, 0],
-];
-
-export const applyRobertsCrossFilter: TApplyFilter = (
+export const applyDirectionalFilter: TApplyFilter = (
   data: Uint8ClampedArray,
   width: number,
   height: number,
-  kernels: number[][][] = [defaultRobertsCrossKernelX, defaultRobertsCrossKernelY],
+  kernels: number[][][],
 ): Uint8ClampedArray => {
   const kernelX = kernels[0];
   const kernelY = kernels[1];
@@ -118,113 +90,6 @@ export const applyRobertsCrossFilter: TApplyFilter = (
   }
 
   return data;
-};
-
-export const defaultSobelKernelX = [
-  [-1, 0, 1],
-  [-2, 0, 2],
-  [-1, 0, 1],
-];
-
-export const defaultSobelKernelY = [
-  [-1, -2, -1],
-  [0, 0, 0],
-  [1, 2, 1],
-];
-
-export const applySobelFilter = (
-  data: Uint8ClampedArray,
-  width: number,
-  height: number,
-  kernels: number[][][] = [defaultSobelKernelX, defaultSobelKernelY],
-): Uint8ClampedArray => {
-  const kernelX = kernels[0];
-  const kernelY = kernels[1];
-  const tempData = new Uint8ClampedArray(data);
-  const kernelSize = kernelX.length;
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      let [gx, gy] = [0, 0];
-      let shouldBreak = false;
-
-      for (let ky = 0; ky < kernelSize; ky++) {
-        for (let kx = 0; kx < kernelSize; kx++) {
-          const ny = y + ky - Math.floor((kernelSize - 1) / 2);
-          const nx = x + kx - Math.floor((kernelSize - 1) / 2);
-
-          if (ny < 0 || ny >= height || nx < 0 || nx >= width) {
-            gx = 0;
-            gy = 0;
-            shouldBreak = true;
-            break;
-          }
-          const pixelIndex = (ny * width + nx) * 4;
-
-          gx += tempData[pixelIndex] * kernelX[ky][kx];
-          gy += tempData[pixelIndex] * kernelY[ky][kx];
-        }
-        if (shouldBreak) break;
-      }
-
-      const index = (y * width + x) * 4;
-      const magnitude = Math.sqrt(gx * gx + gy * gy);
-      data[index] = magnitude;
-      data[index + 1] = magnitude;
-      data[index + 2] = magnitude;
-    }
-  }
-
-  return data;
-};
-
-export const getGradientFromSobelFilter = (
-  data: Uint8ClampedArray,
-  width: number,
-  height: number,
-  kernels: number[][][] = [defaultSobelKernelX, defaultSobelKernelY],
-): { gradientX: Uint8ClampedArray; gradientY: Uint8ClampedArray } => {
-  const kernelX = kernels[0];
-  const kernelY = kernels[1];
-  const gradientX = new Uint8ClampedArray(data.length);
-  const gradientY = new Uint8ClampedArray(data.length);
-  const kernelSize = kernelX.length;
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      let [gx, gy] = [0, 0];
-      let shouldBreak = false;
-
-      for (let ky = 0; ky < kernelSize; ky++) {
-        for (let kx = 0; kx < kernelSize; kx++) {
-          const ny = y + ky - Math.floor((kernelSize - 1) / 2);
-          const nx = x + kx - Math.floor((kernelSize - 1) / 2);
-
-          if (ny < 0 || ny >= height || nx < 0 || nx >= width) {
-            gx = 0;
-            gy = 0;
-            shouldBreak = true;
-            break;
-          }
-          const pixelIndex = (ny * width + nx) * 4;
-
-          gx += data[pixelIndex] * kernelX[ky][kx];
-          gy += data[pixelIndex] * kernelY[ky][kx];
-        }
-        if (shouldBreak) break;
-      }
-
-      const index = (y * width + x) * 4;
-      gradientX[index] = gx;
-      gradientX[index + 1] = gx;
-      gradientX[index + 2] = gx;
-      gradientY[index] = gy;
-      gradientY[index + 1] = gy;
-      gradientY[index + 2] = gy;
-    }
-  }
-
-  return { gradientX, gradientY };
 };
 
 export const applyCannyFilter: TApplyFilter = (data, width, height) => {

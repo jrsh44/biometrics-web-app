@@ -8,16 +8,8 @@ import {
 } from "../../utils/manipulate";
 import {
   applyCannyFilter,
-  applyRobertsCrossFilter,
-  applySobelFilter,
+  applyDirectionalFilter,
   applyWeightedMeanFilter,
-  defaultAverageKernel,
-  defaultGaussianKernel,
-  defaultRobertsCrossKernelX,
-  defaultRobertsCrossKernelY,
-  defaultSharpenKernel,
-  defaultSobelKernelX,
-  defaultSobelKernelY,
 } from "../../utils/filter";
 import { Tabs } from "../ui/Tabs";
 import { BasicToolsTab } from "./tabs/BasicToolsTab";
@@ -27,6 +19,15 @@ import { ButtonDelete, ButtonDownload, ButtonReset } from "../ui/Buttons";
 import { IFilterProps } from "../ui/Filter";
 import { HistogramTab } from "./tabs/HistogramTab";
 import { ProjectionTab } from "./tabs/ProjectionTab";
+import {
+  defaultAverageKernel,
+  defaultGaussianKernel,
+  defaultSharpenKernel,
+  defaultRobertsCrossKernelX,
+  defaultRobertsCrossKernelY,
+  defaultSobelKernelX,
+  defaultSobelKernelY,
+} from "../../consts/kernels";
 
 interface IManipulationPanelProps {
   image: TImage;
@@ -127,13 +128,13 @@ export const ManipulationPanel = (props: IManipulationPanelProps) => {
     {
       label: "Filtr Robert Cross",
       defaultKernels: [defaultRobertsCrossKernelX, defaultRobertsCrossKernelY],
-      onFilterApply: (kernels) => applyFilter(props.image.id, applyRobertsCrossFilter, kernels),
+      onFilterApply: (kernels) => applyFilter(props.image.id, applyDirectionalFilter, kernels),
       kernelsDescription: ["Poziomy", "Pionowy"],
     },
     {
       label: "Filtr Sobela",
       defaultKernels: [defaultSobelKernelX, defaultSobelKernelY],
-      onFilterApply: (kernels) => applyFilter(props.image.id, applySobelFilter, kernels),
+      onFilterApply: (kernels) => applyFilter(props.image.id, applyDirectionalFilter, kernels),
       kernelsDescription: ["Poziomy", "Pionowy"],
     },
     {
@@ -157,7 +158,7 @@ export const ManipulationPanel = (props: IManipulationPanelProps) => {
     props.image && (
       <div className="flex flex-col  max-w-[600px] min-w-[600px] gap-2">
         <div className="flex items-center justify-between w-full h-10">
-          <h2 className="text-xl font-semibold">Manipulacja obrazem #1</h2>
+          <h2 className="text-xl font-semibold">Manipulacja obrazem</h2>
           <div className="flex gap-2">
             <ButtonReset onReset={() => revertImage(props.image.id)} />
             <ButtonDownload onDownload={handleDownload} />
