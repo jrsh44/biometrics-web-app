@@ -139,8 +139,9 @@ export const ManipulationPanel = (props: IManipulationPanelProps) => {
     },
     {
       label: "Canny",
-      defaultKernels: [defaultGaussianKernel],
+      defaultKernels: [defaultGaussianKernel, defaultSobelKernelX, defaultSobelKernelY],
       onFilterApply: (kernels) => applyFilter(props.image.id, applyCannyFilter, kernels),
+      kernelsDescription: ["Rozmywający", "Poziomy", "Pionowy"],
     },
   ];
 

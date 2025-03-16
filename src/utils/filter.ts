@@ -1,4 +1,4 @@
-import { defaultSobelKernelX, defaultSobelKernelY } from "../consts/kernels";
+import { defaultGaussianKernel, defaultSobelKernelX, defaultSobelKernelY } from "../consts/kernels";
 
 export type TApplyFilter = (
   data: Uint8ClampedArray,
@@ -17,28 +17,38 @@ export const applyWeightedMeanFilter: TApplyFilter = (
   const newData = new Uint8ClampedArray(data);
   const kernelSize = kernel.length;
 
+  // Iteracja po każdym pikselu obrazu
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       let [r, g, b, countR, countG, countB] = [0, 0, 0, 0, 0, 0];
 
+      // Iteracja po każdym elemencie jądra
       for (let ky = 0; ky < kernelSize; ky++) {
         for (let kx = 0; kx < kernelSize; kx++) {
+          // Obliczenie współrzędnych sąsiedniego piksela
           const ny = y + ky - Math.floor(kernelSize / 2);
           const nx = x + kx - Math.floor(kernelSize / 2);
 
+          // Sprawdzenie, czy sąsiedni piksel znajduje się w granicach obrazu
           if (ny < 0 || ny >= height || nx < 0 || nx >= width) continue;
+          // Obliczenie indeksu sąsiedniego piksela w tablicy danych
           const pixelIndex = (ny * width + nx) * 4;
 
+          // Dodanie wartości piksela pomnożonej przez wagę jądra do sumy
           r += data[pixelIndex] * kernel[ky][kx];
           g += data[pixelIndex + 1] * kernel[ky][kx];
           b += data[pixelIndex + 2] * kernel[ky][kx];
+
+          // Dodanie wagi jądra do sumy wag
           countR += kernel[ky][kx];
           countG += kernel[ky][kx];
           countB += kernel[ky][kx];
         }
       }
 
+      // Obliczenie indeksu piksela w tablicy danych
       const index = (y * width + x) * 4;
+      // Ustawienie wartości piksela na średnią ważoną (dla kanałów R, G, B)
       newData[index] = r / countR;
       newData[index + 1] = g / countG;
       newData[index + 2] = b / countB;
@@ -74,7 +84,7 @@ const getDirectionalGradient = (
   const gx = Array.from({ length: height }, () => Array(width).fill(0));
   const gy = Array.from({ length: height }, () => Array(width).fill(0));
 
-  // Obliczanie gradientów gx i gy za pomocą jądra Sobela
+  // Obliczanie gradientów gx i gy za pomocą podanych jąder
   for (let i = pad; i < height + pad; i++) {
     for (let j = pad; j < width + pad; j++) {
       for (let ki = 0; ki < kernelSize; ki++) {
@@ -95,8 +105,10 @@ export const applyDirectionalFilter: TApplyFilter = (
   height: number,
   kernels: number[][][],
 ): Uint8ClampedArray => {
+  // Uzyskanie gradientów gx i gy
   const { gx, gy } = getDirectionalGradient(data, width, height, kernels[0], kernels[1]);
 
+  // Iteracja po każdym pikselu obrazu, obliczenie wielkości gradientu i ustawienie wartości piksela
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const index = (y * width + x) * 4;
@@ -114,14 +126,13 @@ export const applyCannyFilter: TApplyFilter = (
   data: Uint8ClampedArray,
   width: number,
   height: number,
+  kernels: number[][][] = [defaultGaussianKernel, defaultSobelKernelX, defaultSobelKernelY],
 ): Uint8ClampedArray => {
-  const { gx, gy } = getDirectionalGradient(
-    data,
-    width,
-    height,
-    defaultSobelKernelX,
-    defaultSobelKernelY,
-  );
+  // Zastosowanie filtru Gaussa
+  const newData = applyWeightedMeanFilter(data, width, height, [kernels[0]]);
+
+  // Uzyskanie gradientów gx i gy za pomocą funkcji getDirectionalGradient
+  const { gx, gy } = getDirectionalGradient(newData, width, height, kernels[1], kernels[2]);
 
   // Obliczanie wielkości gradientu i kąta
   const g = gx.map((row, i) => row.map((val, j) => Math.hypot(val, gy[i][j])));
