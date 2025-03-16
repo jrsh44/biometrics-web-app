@@ -1,3 +1,5 @@
+import { defaultSobelKernelX, defaultSobelKernelY } from "../consts/kernels";
+
 export type TApplyFilter = (
   data: Uint8ClampedArray,
   width: number,
@@ -46,43 +48,59 @@ export const applyWeightedMeanFilter: TApplyFilter = (
   return newData;
 };
 
+const getDirectionalGradient = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  kernelX: number[][],
+  kernelY: number[][],
+): { gx: number[][]; gy: number[][] } => {
+  const kernelSize = kernelX.length;
+  const pad = Math.floor(kernelSize / 2);
+
+  // Konwersja obrazu na skalę szarości
+  const grayscale = Array.from({ length: height }, (_, i) =>
+    Array.from({ length: width }, (_, j) => data[(i * width + j) * 4]),
+  );
+
+  // Dodanie paddingu do obrazu
+  const paddedImg = Array.from({ length: height + 2 * pad }, (_, i) =>
+    Array.from({ length: width + 2 * pad }, (_, j) =>
+      i >= pad && i < height + pad && j >= pad && j < width + pad ? grayscale[i - pad][j - pad] : 0,
+    ),
+  );
+
+  // Inicjalizacja tablic gradientów gx i gy
+  const gx = Array.from({ length: height }, () => Array(width).fill(0));
+  const gy = Array.from({ length: height }, () => Array(width).fill(0));
+
+  // Obliczanie gradientów gx i gy za pomocą jądra Sobela
+  for (let i = pad; i < height + pad; i++) {
+    for (let j = pad; j < width + pad; j++) {
+      for (let ki = 0; ki < kernelSize; ki++) {
+        for (let kj = 0; kj < kernelSize; kj++) {
+          gx[i - pad][j - pad] += paddedImg[i - pad + ki][j - pad + kj] * kernelX[ki][kj];
+          gy[i - pad][j - pad] += paddedImg[i - pad + ki][j - pad + kj] * kernelY[ki][kj];
+        }
+      }
+    }
+  }
+
+  return { gx, gy };
+};
+
 export const applyDirectionalFilter: TApplyFilter = (
   data: Uint8ClampedArray,
   width: number,
   height: number,
   kernels: number[][][],
 ): Uint8ClampedArray => {
-  const kernelX = kernels[0];
-  const kernelY = kernels[1];
-  const tempData = new Uint8ClampedArray(data);
-  const kernelSize = kernelX.length;
+  const { gx, gy } = getDirectionalGradient(data, width, height, kernels[0], kernels[1]);
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      let [gx, gy] = [0, 0];
-      let shouldBreak = false;
-
-      for (let ky = 0; ky < kernelSize; ky++) {
-        for (let kx = 0; kx < kernelSize; kx++) {
-          const ny = y + ky - Math.floor((kernelSize - 1) / 2);
-          const nx = x + kx - Math.floor((kernelSize - 1) / 2);
-
-          if (ny < 0 || ny >= height || nx < 0 || nx >= width) {
-            gx = 0;
-            gy = 0;
-            shouldBreak = true;
-            break;
-          }
-          const pixelIndex = (ny * width + nx) * 4;
-
-          gx += tempData[pixelIndex] * kernelX[ky][kx];
-          gy += tempData[pixelIndex] * kernelY[ky][kx];
-        }
-        if (shouldBreak) break;
-      }
-
       const index = (y * width + x) * 4;
-      const magnitude = Math.sqrt(gx * gx + gy * gy);
+      const magnitude = Math.sqrt(gx[y][x] * gx[y][x] + gy[y][x] * gy[y][x]);
       data[index] = magnitude;
       data[index + 1] = magnitude;
       data[index + 2] = magnitude;
@@ -92,147 +110,94 @@ export const applyDirectionalFilter: TApplyFilter = (
   return data;
 };
 
-export const applyCannyFilter: TApplyFilter = (data, width, height) => {
-  const conv2D = (img: number[][], kernel: number[][]): number[][] => {
-    const h = img.length;
-    const w = img[0].length;
-    const k = kernel.length;
-    const pad = Math.floor(k / 2);
-
-    const paddedImg = Array.from({ length: h + 2 * pad }, (_, i) =>
-      Array.from({ length: w + 2 * pad }, (_, j) =>
-        i >= pad && i < h + pad && j >= pad && j < w + pad ? img[i - pad][j - pad] : 0,
-      ),
-    );
-
-    const result: number[][] = Array.from({ length: h }, () => Array(w).fill(0));
-
-    for (let i = pad; i < h + pad; i++) {
-      for (let j = pad; j < w + pad; j++) {
-        let sum = 0;
-        for (let ki = 0; ki < k; ki++) {
-          for (let kj = 0; kj < k; kj++) {
-            sum += paddedImg[i - pad + ki][j - pad + kj] * kernel[ki][kj];
-          }
-        }
-        result[i - pad][j - pad] = sum;
-      }
-    }
-
-    return result;
-  };
-
-  const sobelFilter = (img: number[][]) => {
-    const kx = [
-      [-1, 0, 1],
-      [-2, 0, 2],
-      [-1, 0, 1],
-    ];
-    const ky = [
-      [1, 2, 1],
-      [0, 0, 0],
-      [-1, -2, -1],
-    ];
-
-    const gx = conv2D(img, kx);
-    const gy = conv2D(img, ky);
-
-    const g = gx.map((row, i) => row.map((val, j) => Math.hypot(val, gy[i][j])));
-    const theta = gx.map((row, i) => row.map((val, j) => Math.atan2(gy[i][j], val)));
-
-    return { gx, gy, g, theta };
-  };
-
-  const nms = (g: number[][], theta: number[][]): number[][] => {
-    const h = g.length;
-    const w = g[0].length;
-    const result = Array.from({ length: h }, () => Array(w).fill(0));
-
-    for (let i = 1; i < h - 1; i++) {
-      for (let j = 1; j < w - 1; j++) {
-        const angle = ((theta[i][j] * 180) / Math.PI + 180) % 180;
-
-        let q = 255;
-        let r = 255;
-
-        if ((angle >= 0 && angle < 22.5) || (angle >= 157.5 && angle <= 180)) {
-          q = g[i][j + 1];
-          r = g[i][j - 1];
-        } else if (angle >= 22.5 && angle < 67.5) {
-          q = g[i + 1][j - 1];
-          r = g[i - 1][j + 1];
-        } else if (angle >= 67.5 && angle < 112.5) {
-          q = g[i + 1][j];
-          r = g[i - 1][j];
-        } else if (angle >= 112.5 && angle < 157.5) {
-          q = g[i - 1][j - 1];
-          r = g[i + 1][j + 1];
-        }
-
-        if (g[i][j] >= q && g[i][j] >= r) {
-          result[i][j] = g[i][j];
-        }
-      }
-    }
-
-    return result;
-  };
-
-  const threshold = (
-    img: number[][],
-    low: number,
-    high: number,
-  ): { res: number[][]; weak: number; strong: number } => {
-    const weak = 25;
-    const strong = 255;
-
-    const res = img.map((row) => row.map((val) => (val >= high ? strong : val >= low ? weak : 0)));
-
-    return { res, weak, strong };
-  };
-
-  const hysteresis = (img: number[][], weak: number, strong: number): number[][] => {
-    const h = img.length;
-    const w = img[0].length;
-
-    for (let i = 1; i < h - 1; i++) {
-      for (let j = 1; j < w - 1; j++) {
-        if (img[i][j] === weak) {
-          if (
-            [
-              img[i - 1][j - 1],
-              img[i - 1][j],
-              img[i - 1][j + 1],
-              img[i][j - 1],
-              img[i][j + 1],
-              img[i + 1][j - 1],
-              img[i + 1][j],
-              img[i + 1][j + 1],
-            ].includes(strong)
-          ) {
-            img[i][j] = strong;
-          } else {
-            img[i][j] = 0;
-          }
-        }
-      }
-    }
-
-    return img;
-  };
-
-  const grayscale = Array.from({ length: height }, (_, i) =>
-    Array.from({ length: width }, (_, j) => data[(i * width + j) * 4]),
+export const applyCannyFilter: TApplyFilter = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+): Uint8ClampedArray => {
+  const { gx, gy } = getDirectionalGradient(
+    data,
+    width,
+    height,
+    defaultSobelKernelX,
+    defaultSobelKernelY,
   );
 
-  const { g, theta } = sobelFilter(grayscale);
-  const suppressed = nms(g, theta);
-  const { res, weak, strong } = threshold(suppressed, 50, 100);
-  const final = hysteresis(res, weak, strong);
+  // Obliczanie wielkości gradientu i kąta
+  const g = gx.map((row, i) => row.map((val, j) => Math.hypot(val, gy[i][j])));
+  const theta = gx.map((row, i) => row.map((val, j) => Math.atan2(gy[i][j], val)));
 
+  // Inicjalizacja tablicy do supresji nielokalnych maksimów
+  const suppressed = Array.from({ length: height }, () => Array(width).fill(0));
+
+  // Supresja nielokalnych maksimów
+  for (let i = 1; i < height - 1; i++) {
+    for (let j = 1; j < width - 1; j++) {
+      const angle = ((theta[i][j] * 180) / Math.PI + 180) % 180;
+
+      let q = 255;
+      let r = 255;
+
+      if ((angle >= 0 && angle < 22.5) || (angle >= 157.5 && angle <= 180)) {
+        q = g[i][j + 1];
+        r = g[i][j - 1];
+      } else if (angle >= 22.5 && angle < 67.5) {
+        q = g[i + 1][j - 1];
+        r = g[i - 1][j + 1];
+      } else if (angle >= 67.5 && angle < 112.5) {
+        q = g[i + 1][j];
+        r = g[i - 1][j];
+      } else if (angle >= 112.5 && angle < 157.5) {
+        q = g[i - 1][j - 1];
+        r = g[i + 1][j + 1];
+      }
+
+      if (g[i][j] >= q && g[i][j] >= r) {
+        suppressed[i][j] = g[i][j];
+      }
+    }
+  }
+
+  // Definiowanie progów i wartości dla słabych i silnych krawędzi
+  const weak = 25;
+  const strong = 255;
+  const low = 50;
+  const high = 100;
+
+  // Progowanie dwustopniowe
+  const thresholded = suppressed.map((row) =>
+    row.map((val) => (val >= high ? strong : val >= low ? weak : 0)),
+  );
+
+  // Histereza
+  for (let i = 1; i < height - 1; i++) {
+    for (let j = 1; j < width - 1; j++) {
+      if (thresholded[i][j] === weak) {
+        if (
+          [
+            thresholded[i - 1][j - 1],
+            thresholded[i - 1][j],
+            thresholded[i - 1][j + 1],
+            thresholded[i][j - 1],
+            thresholded[i][j + 1],
+            thresholded[i + 1][j - 1],
+            thresholded[i + 1][j],
+            thresholded[i + 1][j + 1],
+          ].includes(strong)
+        ) {
+          thresholded[i][j] = strong;
+        } else {
+          thresholded[i][j] = 0;
+        }
+      }
+    }
+  }
+
+  // Tworzenie wyniku jako Uint8ClampedArray
   const result = new Uint8ClampedArray(width * height * 4);
 
-  final.flat().forEach((val, i) => {
+  // Przekształcanie tablicy progowanej na wynikowy obraz
+  thresholded.flat().forEach((val, i) => {
     const offset = i * 4;
     result[offset] = result[offset + 1] = result[offset + 2] = val;
     result[offset + 3] = 255;
