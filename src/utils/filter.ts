@@ -20,7 +20,7 @@ export const applyWeightedMeanFilter: TApplyFilter = (
   // Iteracja po każdym pikselu obrazu
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      let [r, g, b, countR, countG, countB] = [0, 0, 0, 0, 0, 0];
+      let [r, g, b, weight] = [0, 0, 0, 0];
 
       // Iteracja po każdym elemencie jądra
       for (let ky = 0; ky < kernelSize; ky++) {
@@ -40,18 +40,16 @@ export const applyWeightedMeanFilter: TApplyFilter = (
           b += data[pixelIndex + 2] * kernel[ky][kx];
 
           // Dodanie wagi jądra do sumy wag
-          countR += kernel[ky][kx];
-          countG += kernel[ky][kx];
-          countB += kernel[ky][kx];
+          weight += kernel[ky][kx];
         }
       }
 
       // Obliczenie indeksu piksela w tablicy danych
       const index = (y * width + x) * 4;
       // Ustawienie wartości piksela na średnią ważoną (dla kanałów R, G, B)
-      newData[index] = r / countR;
-      newData[index + 1] = g / countG;
-      newData[index + 2] = b / countB;
+      newData[index] = r / weight;
+      newData[index + 1] = g / weight;
+      newData[index + 2] = b / weight;
     }
   }
 
