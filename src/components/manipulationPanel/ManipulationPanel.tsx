@@ -149,8 +149,8 @@ export const ManipulationPanel = (props: IManipulationPanelProps) => {
     if (canvasRef.current) {
       const canvas = canvasRef.current;
       const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = "image.png";
+      link.href = canvas.toDataURL("image/jpeg");
+      link.download = "image.jpg";
       link.click();
     }
   }, []);
