@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { XAxis, YAxis, ResponsiveContainer, LineChart, Tooltip, Line } from "recharts";
+import { XAxis, YAxis, ResponsiveContainer, LineChart, Line } from "recharts";
 import { applyGrayscale } from "../../../utils/manipulate";
 
 type TChartData = { x: number; value: number };
@@ -46,7 +46,6 @@ export const ProjectionTab = (props: IProjecttionTabProps) => {
           <LineChart data={horizontalData} layout="vertical">
             <XAxis type="number" tick={false} />
             <YAxis dataKey="x" type="number" />
-            <Tooltip />
             <Line type="monotone" dataKey="value" stroke="#8884d8" dot={false} />
           </LineChart>
         </ResponsiveContainer>
@@ -57,7 +56,6 @@ export const ProjectionTab = (props: IProjecttionTabProps) => {
           <LineChart data={verticalData}>
             <XAxis dataKey="x" type="number" tickCount={4} />
             <YAxis type="number" tick={false} />
-            <Tooltip />
             <Line type="monotone" dataKey="value" stroke="#82ca9d" dot={false} />
           </LineChart>
         </ResponsiveContainer>
