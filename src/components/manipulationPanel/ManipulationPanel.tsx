@@ -108,31 +108,31 @@ export const ManipulationPanel = (props: IManipulationPanelProps) => {
 
   const filters: IFilterProps[] = [
     {
-      label: "Filtr uśredniający",
+      label: "Uśredniający",
       defaultKernels: [defaultAverageKernel],
       onFilterApply: (kernels) => applyFilter(props.image.id, applyWeightedMeanFilter, kernels),
       // hideKernels: true,
     },
     {
-      label: "Filtr Gaussa",
+      label: "Gaussa",
       defaultKernels: [defaultGaussianKernel],
       onFilterApply: (kernels) => applyFilter(props.image.id, applyWeightedMeanFilter, kernels),
       // hideKernels: true,
     },
     {
-      label: "Wyostrzanie",
+      label: "Wyostrzający",
       defaultKernels: [defaultSharpenKernel],
       onFilterApply: (kernels) => applyFilter(props.image.id, applyWeightedMeanFilter, kernels),
       // hideKernels: true,
     },
     {
-      label: "Filtr Robert Cross",
+      label: "Robertsa",
       defaultKernels: [defaultRobertsCrossKernelX, defaultRobertsCrossKernelY],
       onFilterApply: (kernels) => applyFilter(props.image.id, applyDirectionalFilter, kernels),
       kernelsDescription: ["Poziomy", "Pionowy"],
     },
     {
-      label: "Filtr Sobela",
+      label: "Sobela",
       defaultKernels: [defaultSobelKernelX, defaultSobelKernelY],
       onFilterApply: (kernels) => applyFilter(props.image.id, applyDirectionalFilter, kernels),
       kernelsDescription: ["Poziomy", "Pionowy"],
