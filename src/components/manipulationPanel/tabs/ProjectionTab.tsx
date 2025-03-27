@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { XAxis, YAxis, ResponsiveContainer, LineChart, Line } from "recharts";
-import { applyGrayscale } from "../../../utils/manipulate";
+import { applyBinarization } from "../../../utils/manipulate";
 
 type TChartData = { x: number; value: number };
 
@@ -22,10 +22,11 @@ export const ProjectionTab = (props: IProjecttionTabProps) => {
     for (let y = 0; y < props.height; y++) {
       for (let x = 0; x < props.width; x++) {
         const index = (y * props.width + x) * 4;
-        const pixelValue = applyGrayscale(
+        const pixelValue = applyBinarization(
           props.data[index],
           props.data[index + 1],
           props.data[index + 2],
+          128,
         )[0];
 
         horizontalProjection[y] += pixelValue;
