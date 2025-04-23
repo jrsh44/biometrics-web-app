@@ -1,7 +1,7 @@
 import { binarizeClampedArray } from "./manipulate";
 import { close, defaultSquareKernel, dilate, EMorphology, erode, open } from "./morphology";
 
-export const distanceTransform = (
+const distanceTransform = (
   data: Uint8ClampedArray,
   width: number,
   height: number,
@@ -81,7 +81,7 @@ export const distanceTransform = (
   return result;
 };
 
-export const calculateP = (data: Uint8ClampedArray, width: number, height: number): number => {
+const calculateP = (data: Uint8ClampedArray, width: number, height: number): number => {
   let P = 0;
 
   for (let y = 0; y < height; y++) {
