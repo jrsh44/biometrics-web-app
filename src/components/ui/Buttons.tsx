@@ -3,11 +3,12 @@ import { Icon, TIconName } from "./Icon";
 interface IButtonProps {
   label: string;
   onClick: () => void;
+  className?: string;
 }
 
 export const Button = (props: IButtonProps) => (
   <button
-    className="flex w-full justify-center border-2 p-4 text-slate-200 border-gray-600 hover:border-slate-200 transition-all cursor-pointer"
+    className={`flex w-full justify-center border-2 p-4 text-slate-200 border-gray-600 hover:border-slate-200 transition-all cursor-pointer ${props.className}`}
     onClick={props.onClick}
   >
     {props.label}
