@@ -3,6 +3,7 @@ import { ManipulationPanel } from "../components/manipulationPanel";
 import { ImageInputText } from "../components/ui/ImageInputText";
 import { useImage } from "../utils/useImage";
 import { Button } from "../components/ui/Buttons";
+import { LensPanel } from "../components/lensPanel/LensPanel";
 
 export const App = () => {
   const [currentImage, setCurrentImage] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export const App = () => {
 
   return (
     <div className="flex flex-col w-full gap-4 p-4 h-dvh overflow-auto">
+      <LensPanel />
       <h1 className="text-2xl font-bold">Przetwarzanie obrazu</h1>
       <div className="flex gap-8">
         <div className="flex flex-col max-w-[600px] min-w-[600px] gap-2">
