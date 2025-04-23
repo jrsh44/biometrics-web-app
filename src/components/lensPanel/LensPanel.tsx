@@ -23,6 +23,7 @@ const MAX_PERSON_ID = 46;
 const MAX_IMAGE_ID = 5;
 const XL = 4;
 const THRESHOLD = 200;
+const COMPARISON_THRESHOLD = 0.2;
 const OPERATIONS = [
   // Erode 10x to remove holes
   EMorphology.Erode,
@@ -475,7 +476,7 @@ export const LensPanel = () => {
     const selectedCode = savedIrisCodes.find((code) => code.id === selectedSavedCode);
     if (!selectedCode) return;
 
-    const report = createIrisComparisonReport(currentIrisCode, selectedCode.code, 0.2);
+    const report = createIrisComparisonReport(currentIrisCode, selectedCode.code, COMPARISON_THRESHOLD);
     setComparisonResult({
       match: report.match,
       distance: report.distance,

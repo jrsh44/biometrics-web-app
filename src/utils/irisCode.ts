@@ -300,7 +300,7 @@ export const generateDaugmanIrisCode = (
 export const createIrisComparisonReport = (
   code1: number[][],
   code2: number[][],
-  threshold: number = 0.32,
+  threshold: number = 0.2,
 ): {
   match: boolean;
   distance: number;
