@@ -29,7 +29,7 @@ export const IrisChart: React.FC<IrisChartProps> = ({ chartData, irisRadiusIndex
       </h3>
       <div style={{ width: "100%", height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, left: 10, right: 10, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 25, left: 10, right: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="radius"
@@ -72,7 +72,7 @@ export const IrisChart: React.FC<IrisChartProps> = ({ chartData, irisRadiusIndex
                 x={chartData[irisRadiusIndex]?.radius}
                 stroke="#00aaff"
                 strokeWidth={2}
-                label={{ value: "Granica tęczówki", position: "top" }}
+                label={{ value: "Granica tęczówki", position: "top", offset: 10, fill: "#00aaff" }}
                 yAxisId="left"
               />
             )}
