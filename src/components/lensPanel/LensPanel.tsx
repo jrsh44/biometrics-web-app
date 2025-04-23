@@ -527,22 +527,35 @@ export const LensPanel = () => {
       {currentFolder && currentEye && currentImageNumber && (
         <>
           <Separator />
-          <div className="flex gap-4 w-full">
-            <div className="flex flex-col items-center w-1/2 gap-2">
-              <h3 className="text-lg font-medium">Obraz oryginalny</h3>
-              <canvas
-                ref={originalCanvasRef}
-                className="max-w-full max-h-[350px] w-full object-contain rounded-md border border-slate-600"
-              />
-            </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-4 w-full">
+              <div className="flex flex-col items-center w-1/2 gap-2">
+                <h3 className="text-lg font-medium">Obraz oryginalny</h3>
+                <canvas
+                  ref={originalCanvasRef}
+                  className="max-w-full max-h-[350px] w-full object-contain rounded-md border border-slate-600"
+                />
+              </div>
 
-            <div className="flex flex-col items-center w-1/2 gap-2">
-              <h3 className="text-lg font-medium">Obraz przetworzony</h3>
-              <canvas
-                ref={processedCanvasRef}
-                className="max-w-full max-h-[350px] w-full object-contain rounded-md border border-slate-600"
-              />
+              <div className="flex flex-col items-center w-1/2 gap-2">
+                <h3 className="text-lg font-medium">Obraz przetworzony</h3>
+                <canvas
+                  ref={processedCanvasRef}
+                  className="max-w-full max-h-[350px] w-full object-contain rounded-md border border-slate-600"
+                />
+              </div>
             </div>
+            {pupilInfo && (
+              <div className="flex text-center justify-evenly">
+                <p>
+                  Promień źrenicy: <strong>{pupilInfo.radius}px</strong>
+                </p>
+                <p>
+                  Środek źrenicy: (X) <strong>{pupilInfo.centerX}px</strong> (Y) <strong>{pupilInfo.centerY}px</strong>
+                </p>
+
+              </div>
+            )}
           </div>
         </>
       )}
