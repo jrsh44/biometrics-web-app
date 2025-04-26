@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { defaultSquareKernel, EMorphology } from "../../utils/morphology";
 import { getPupil, detectPupilWithProjections } from "../../utils/pupil";
 import { IrisChart } from "./IrisChart";
-import { findLargestJumps, listOfMeanPixelValuesInEyeStartingFromPupil } from "../../utils/iris";
+import { findLargestJump, listOfMeanPixelValuesInEyeStartingFromPupil } from "../../utils/iris";
 import { defaultGaussianKernel } from "../../consts/kernels";
 import { applyWeightedMeanFilter } from "../../utils/filter";
 import { drawCircle, drawCrosshair } from "../../utils/draw";
@@ -232,16 +232,16 @@ export const LensPanel = () => {
 
   const handleIris = () => {
     if (!originalImageData || !pupilInfo) return;
-
+  
     let analyzeData = originalImageData.data;
-
+  
     analyzeData = applyWeightedMeanFilter(
       analyzeData,
       originalImageData.width,
       originalImageData.height,
       [defaultGaussianKernel],
     );
-
+  
     const meanValues = listOfMeanPixelValuesInEyeStartingFromPupil(
       analyzeData,
       originalImageData.width,
@@ -252,28 +252,19 @@ export const LensPanel = () => {
       true,
       1,
     );
-
+  
     const differences: number[] = [0];
     for (let i = 1; i < meanValues.length; i++) {
       differences.push(Math.abs(meanValues[i] - meanValues[i - 1]));
     }
-
-    const { pupilJump, irisJump } = findLargestJumps(
-      meanValues,
-      pupilInfo.radius,
-      pupilInfo.radius * 1.5,
-    );
-
-    const updatedJumpIndices: number[] = [];
-    if (pupilJump !== null) updatedJumpIndices.push(pupilJump);
-    if (irisJump !== null) updatedJumpIndices.push(irisJump);
-
+  
+    const irisJump = findLargestJump(meanValues, pupilInfo.radius, pupilInfo.radius * 1.3);
     setIrisRadiusIndex(irisJump);
-
+  
     if (irisJump !== null) {
       const calculatedIrisRadius = pupilInfo.radius + irisJump;
       setIrisRadius(calculatedIrisRadius);
-
+  
       let newImageData = new Uint8ClampedArray(originalImageData.data);
       newImageData = drawCircle(
         newImageData,
@@ -284,7 +275,7 @@ export const LensPanel = () => {
         pupilInfo.radius,
         [0, 255, 0, 255],
       );
-
+  
       newImageData = drawCircle(
         newImageData,
         originalImageData.width,
@@ -294,18 +285,18 @@ export const LensPanel = () => {
         calculatedIrisRadius,
         [0, 170, 255, 255],
       );
-
+  
       setOriginalWithCircleData(
         new ImageData(newImageData, originalImageData.width, originalImageData.height),
       );
     }
-
+  
     const formattedData = meanValues.map((value, i) => ({
       radius: pupilInfo.radius + i,
       value: value,
       diff: differences[i],
     }));
-
+  
     setChartData(formattedData);
   };
 
