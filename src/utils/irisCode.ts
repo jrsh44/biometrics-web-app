@@ -1,12 +1,12 @@
-export interface DaugmanParams {
+export type TDaugmanParams = {
   frequency: number;
   sigma: number;
   windowSize: number;
   normalizedWidth: number;
   normalizedHeight: number;
-}
+};
 
-export const defaultDaugmanParams: DaugmanParams = {
+export const defaultDaugmanParams: TDaugmanParams = {
   frequency: 0.75,
   sigma: 5,
   windowSize: 25,
@@ -236,21 +236,21 @@ export const irisCodeToCrispImage = (
 };
 
 export const generateDaugmanIrisCode = (
-  imageData: Uint8ClampedArray,
+  data: Uint8ClampedArray,
   width: number,
   height: number,
   centerX: number,
   centerY: number,
   pupilRadius: number,
   irisRadius: number,
-  params: DaugmanParams = defaultDaugmanParams,
+  params: TDaugmanParams = defaultDaugmanParams,
 ): {
   irisCode: number[][];
   normalizedImage: Uint8ClampedArray;
   visualizationImage: Uint8ClampedArray;
 } => {
   const { normalizedImage, visualizationImage } = daugmanNormalizeIris(
-    imageData,
+    data,
     width,
     height,
     centerX,

@@ -6,7 +6,7 @@ export const drawCrosshair = (
   centerY: number,
   size: number,
   color: [number, number, number, number] = [255, 0, 0, 255],
-) => {
+): Uint8ClampedArray<ArrayBuffer> => {
   const result = new Uint8ClampedArray(data);
 
   for (let x = centerX - size; x <= centerX + size; x++) {
@@ -33,7 +33,7 @@ export const drawCrosshair = (
 };
 
 export const drawCircle = (
-  imageData: Uint8ClampedArray,
+  data: Uint8ClampedArray,
   width: number,
   height: number,
   centerX: number,
@@ -41,8 +41,8 @@ export const drawCircle = (
   radius: number,
   color: [number, number, number, number] = [0, 255, 0, 255],
   thickness: number = 1,
-) => {
-  const result = new Uint8ClampedArray(imageData);
+): Uint8ClampedArray<ArrayBuffer> => {
+  const result = new Uint8ClampedArray(data);
 
   for (let angle = 0; angle < 360; angle++) {
     const radians = (angle * Math.PI) / 180;

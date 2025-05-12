@@ -55,7 +55,11 @@ export const ManipulationPanel = (props: IManipulationPanelProps) => {
         canvas.width = props.image.width;
         canvas.height = props.image.height;
         ctx.putImageData(
-          new ImageData(props.image.data, props.image.width, props.image.height),
+          new ImageData(
+            new Uint8ClampedArray(props.image.data),
+            props.image.width,
+            props.image.height,
+          ),
           0,
           0,
         );

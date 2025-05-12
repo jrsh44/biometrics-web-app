@@ -13,7 +13,7 @@ import {
   irisCodeToCrispImage,
   createIrisComparisonReport,
   defaultDaugmanParams,
-  DaugmanParams,
+  TDaugmanParams,
 } from "../../utils/irisCode";
 import { Input } from "../ui/Input";
 import { Radio } from "../ui/Radio";
@@ -112,7 +112,7 @@ export const LensPanel = () => {
     comparisonVisualization: HTMLCanvasElement;
   } | null>(null);
 
-  const [daugmanParams, setDaugmanParams] = useState<DaugmanParams>({
+  const [daugmanParams, setDaugmanParams] = useState<TDaugmanParams>({
     ...defaultDaugmanParams,
   });
 
@@ -235,11 +235,10 @@ export const LensPanel = () => {
 
     let analyzeData = originalImageData.data;
 
-    analyzeData = applyWeightedMeanFilter(
-      analyzeData,
-      originalImageData.width,
-      originalImageData.height,
-      [defaultGaussianKernel],
+    analyzeData = new Uint8ClampedArray(
+      applyWeightedMeanFilter(analyzeData, originalImageData.width, originalImageData.height, [
+        defaultGaussianKernel,
+      ]),
     );
 
     const meanValues = listOfMeanPixelValuesInEyeStartingFromPupil(
@@ -352,7 +351,7 @@ export const LensPanel = () => {
     }
   };
 
-  const updateDaugmanParam = (param: keyof DaugmanParams, value: number) => {
+  const updateDaugmanParam = (param: keyof TDaugmanParams, value: number) => {
     setDaugmanParams((prev) => ({
       ...prev,
       [param]: value,
@@ -412,7 +411,7 @@ export const LensPanel = () => {
       const ctx = normalizedCanvas.getContext("2d", { willReadFrequently: true });
       if (ctx) {
         const imageData = new ImageData(
-          normalizedIrisImage,
+          new Uint8ClampedArray(normalizedIrisImage),
           daugmanParams.normalizedWidth,
           daugmanParams.normalizedHeight,
         );
@@ -476,7 +475,11 @@ export const LensPanel = () => {
     const selectedCode = savedIrisCodes.find((code) => code.id === selectedSavedCode);
     if (!selectedCode) return;
 
-    const report = createIrisComparisonReport(currentIrisCode, selectedCode.code, COMPARISON_THRESHOLD);
+    const report = createIrisComparisonReport(
+      currentIrisCode,
+      selectedCode.code,
+      COMPARISON_THRESHOLD,
+    );
     setComparisonResult({
       match: report.match,
       distance: report.distance,
@@ -551,9 +554,9 @@ export const LensPanel = () => {
                   Promień źrenicy: <strong>{pupilInfo.radius}px</strong>
                 </p>
                 <p>
-                  Środek źrenicy: (X) <strong>{pupilInfo.centerX}px</strong> (Y) <strong>{pupilInfo.centerY}px</strong>
+                  Środek źrenicy: (X) <strong>{pupilInfo.centerX}px</strong> (Y){" "}
+                  <strong>{pupilInfo.centerY}px</strong>
                 </p>
-
               </div>
             )}
           </div>
