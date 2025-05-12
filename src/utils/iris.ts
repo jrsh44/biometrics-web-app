@@ -91,12 +91,12 @@ export const listOfMeanPixelValuesInEyeStartingFromPupil = (
   return meanPixelValues;
 };
 
-export const findLargestJumps = (
+export const findLargestJump = (
   data: number[],
   pupilRadius: number,
   thresholdRadius: number = pupilRadius * 1.3,
-): { pupilJump: number | null; irisJump: number | null } => {
-  if (data.length < 2) return { pupilJump: null, irisJump: null };
+): number | null  => {
+  if (data.length < 2) return null;
 
   const differences: { index: number; value: number; radius: number }[] = [];
   for (let i = 1; i < data.length; i++) {
@@ -106,15 +106,11 @@ export const findLargestJumps = (
       radius: pupilRadius + i,
     });
   }
-
-  const pupilJumps = [...differences].sort((a, b) => b.value - a.value).slice(0, 2);
-  const pupilJump = pupilJumps[0]?.index || null;
-
   const irisJumpCandidates = differences
     .filter((d) => d.radius > thresholdRadius)
     .sort((a, b) => b.value - a.value);
 
   const irisJump = irisJumpCandidates.length > 0 ? irisJumpCandidates[0].index : null;
 
-  return { pupilJump, irisJump };
+  return irisJump ;
 };

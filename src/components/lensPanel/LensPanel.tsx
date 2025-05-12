@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { defaultSquareKernel, EMorphology } from "../../utils/morphology";
 import { getPupil, detectPupilWithProjections } from "../../utils/pupil";
 import { IrisChart } from "./IrisChart";
-import { findLargestJumps, listOfMeanPixelValuesInEyeStartingFromPupil } from "../../utils/iris";
+import { findLargestJump, listOfMeanPixelValuesInEyeStartingFromPupil } from "../../utils/iris";
 import { defaultGaussianKernel } from "../../consts/kernels";
 import { applyWeightedMeanFilter } from "../../utils/filter";
 import { drawCircle, drawCrosshair } from "../../utils/draw";
@@ -257,16 +257,7 @@ export const LensPanel = () => {
       differences.push(Math.abs(meanValues[i] - meanValues[i - 1]));
     }
 
-    const { pupilJump, irisJump } = findLargestJumps(
-      meanValues,
-      pupilInfo.radius,
-      pupilInfo.radius * 1.5,
-    );
-
-    const updatedJumpIndices: number[] = [];
-    if (pupilJump !== null) updatedJumpIndices.push(pupilJump);
-    if (irisJump !== null) updatedJumpIndices.push(irisJump);
-
+    const irisJump = findLargestJump(meanValues, pupilInfo.radius, pupilInfo.radius * 1.3);
     setIrisRadiusIndex(irisJump);
 
     if (irisJump !== null) {
