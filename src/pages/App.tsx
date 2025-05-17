@@ -4,6 +4,7 @@ import { ImageInputText } from "../components/ui/ImageInputText";
 import { useImage } from "../utils/useImage";
 import { Button } from "../components/ui/Buttons";
 import { LensPanel } from "../components/lensPanel/LensPanel";
+import { SkeletonizationPanel } from "../components/skeletonizationPanel/SkeletonizationPanel";
 
 export const App = () => {
   const [currentImage, setCurrentImage] = useState<string | null>(null);
@@ -41,6 +42,7 @@ export const App = () => {
 
   return (
     <div className="flex flex-col w-full gap-4 p-4 h-dvh overflow-auto">
+      <SkeletonizationPanel />
       <LensPanel />
       <h1 className="text-2xl font-bold">Przetwarzanie obrazu</h1>
       <div className="flex gap-8">
