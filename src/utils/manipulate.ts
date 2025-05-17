@@ -62,3 +62,31 @@ export const binarizeClampedArray = (
 
   return result;
 };
+
+export const negation = (data: Uint8ClampedArray): Uint8ClampedArray => {
+  const result = new Uint8ClampedArray(data.length);
+
+  for (let i = 0; i < data.length; i += 4) {
+    const pixelValue = data[i] > 0 ? 0 : 255;
+    result[i] = result[i + 1] = result[i + 2] = pixelValue;
+    result[i + 3] = data[i + 3];
+  }
+
+  return result;
+};
+
+export const rotate90counterclockwise = (matrix: number[][]): number[][] => {
+  const rows = matrix.length;
+  const cols = matrix[0].length;
+  const rotated = Array(cols)
+    .fill(0)
+    .map(() => Array(rows).fill(0));
+
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      rotated[cols - j - 1][i] = matrix[i][j];
+    }
+  }
+
+  return rotated;
+};
