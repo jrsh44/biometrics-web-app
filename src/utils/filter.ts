@@ -214,3 +214,148 @@ export const applyCannyFilter: TApplyFilter = (
 
   return result;
 };
+
+function gaborKernel(
+  kernelSize: number,
+  sigma: number,
+  theta: number,
+  lambda: number,
+  gamma: number = 0.5,
+  psi: number = 0,
+): number[][] {
+  const half = Math.floor(kernelSize / 2);
+  const kernel = Array(kernelSize)
+    .fill(null)
+    .map(() => Array(kernelSize).fill(0));
+
+  for (let y = -half; y <= half; y++) {
+    for (let x = -half; x <= half; x++) {
+      const xTheta = x * Math.cos(theta) + y * Math.sin(theta);
+      const yTheta = -x * Math.sin(theta) + y * Math.cos(theta);
+      const gb =
+        Math.exp(-(xTheta ** 2 + gamma ** 2 * yTheta ** 2) / (2 * sigma ** 2)) *
+        Math.cos((2 * Math.PI * xTheta) / lambda + psi);
+      kernel[y + half][x + half] = gb;
+    }
+  }
+  return kernel;
+}
+
+function convolve2D(image: number[][], kernel: number[][]): number[][] {
+  const imageHeight = image.length;
+  const imageWidth = image[0].length;
+  const kernelSize = kernel.length;
+  const kernelHalf = Math.floor(kernelSize / 2);
+  const result = Array(imageHeight)
+    .fill(null)
+    .map(() => Array(imageWidth).fill(0));
+
+  for (let y = 0; y < imageHeight; y++) {
+    for (let x = 0; x < imageWidth; x++) {
+      let sum = 0;
+      for (let ky = -kernelHalf; ky <= kernelHalf; ky++) {
+        for (let kx = -kernelHalf; kx <= kernelHalf; kx++) {
+          const imageY = y + ky;
+          const imageX = x + kx;
+          if (imageY >= 0 && imageY < imageHeight && imageX >= 0 && imageX < imageWidth) {
+            sum += image[imageY][imageX] * kernel[ky + kernelHalf][kx + kernelHalf];
+          }
+        }
+      }
+      result[y][x] = sum;
+    }
+  }
+  return result;
+}
+
+function padImage(image: number[][], padding: number): number[][] {
+  const imageHeight = image.length;
+  const imageWidth = image[0].length;
+  const paddedHeight = imageHeight + 2 * padding;
+  const paddedWidth = imageWidth + 2 * padding;
+  const paddedImage = Array(paddedHeight)
+    .fill(null)
+    .map(() => Array(paddedWidth).fill(0));
+
+  for (let y = 0; y < imageHeight; y++) {
+    for (let x = 0; x < imageWidth; x++) {
+      paddedImage[y + padding][x + padding] = image[y][x];
+    }
+  }
+
+  for (let y = padding; y < imageHeight + padding; y++) {
+    for (let x = 0; x < padding; x++) {
+      paddedImage[y][x] = image[y - padding][0];
+      paddedImage[y][paddedWidth - 1 - x] = image[y - padding][imageWidth - 1];
+    }
+  }
+  for (let x = 0; x < paddedWidth; x++) {
+    for (let y = 0; y < padding; y++) {
+      paddedImage[y][x] = paddedImage[padding][x];
+      paddedImage[paddedHeight - 1 - y][x] = paddedImage[imageHeight + padding - 1][x];
+    }
+  }
+
+  return paddedImage;
+}
+
+export function enhanceWithGabor(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  frequencies: number[],
+  thetas: number[],
+  kernelSize: number = 15,
+  sigma: number = 4,
+  gamma: number = 0.5,
+  psi: number = 0,
+) {
+  const img: number[][] = Array(height)
+    .fill(null)
+    .map(() => Array(width).fill(0));
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      img[y][x] = data[(y * width + x) * 4] / 255.0;
+    }
+  }
+
+  const imPad = padImage(img, Math.floor(kernelSize / 2));
+  const accum: number[][] = Array(height)
+    .fill(null)
+    .map(() => Array(width).fill(0));
+
+  for (const theta of thetas) {
+    for (const freq of frequencies) {
+      const lambda = 1.0 / freq;
+      const k = gaborKernel(kernelSize, sigma, theta, lambda, gamma, psi);
+      let sumAbsK = 0;
+      for (let i = 0; i < k.length; i++) {
+        for (let j = 0; j < k[0].length; j++) {
+          sumAbsK += Math.abs(k[i][j]);
+        }
+      }
+      const normalizedK = k.map((row) => row.map((val) => val / sumAbsK));
+
+      const resp = convolve2D(imPad, normalizedK);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          accum[y][x] = Math.max(accum[y][x], resp[y][x]);
+        }
+      }
+    }
+  }
+
+  const resultData = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const value = Math.max(0, Math.min(1, accum[y][x])) * 255;
+      const idx = (y * width + x) * 4;
+      resultData[idx] = value;
+      resultData[idx + 1] = value;
+      resultData[idx + 2] = value;
+      resultData[idx + 3] = 255;
+    }
+  }
+
+  return resultData;
+}
