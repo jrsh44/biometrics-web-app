@@ -3,8 +3,14 @@ import { Button } from "../ui/Buttons";
 import { Input } from "../ui/Input";
 import { Radio } from "../ui/Radio";
 import { Separator } from "../ui/Separator";
-import { morphologicalThinning } from "../../utils/skeletonization";
-import { binarizeClampedArray } from "../../utils/manipulate";
+import { enhanceWithGabor } from "../../utils/filter";
+import {
+  binarizeClampedArray,
+  contrastStretch,
+  negateClampedArray,
+  normalizeClampedArray,
+} from "../../utils/manipulate";
+import { kmmThinning, morphologicalThinning } from "../../utils/skeletonization";
 
 // Stałe dla limitów danych
 const MAX_IMAGE_ID = 5;
@@ -20,6 +26,17 @@ export const SkeletonizationPanel = () => {
   const [originalImageData, setOriginalImageData] = useState<ImageData | null>(null);
   const [skeletonImageData, setSkeletonImageData] = useState<ImageData | null>(null);
   const [minutiaeImageData, setMinutiaeImageData] = useState<ImageData | null>(null);
+  const [binarizationThreshold, setBinarizationThreshold] = useState(28);
+  const [useNormalize, setUseNormalize] = useState(false);
+  const [useGaborFilter, setUseGaborFilter] = useState(false);
+  const [gaborParams, setGaborParams] = useState({
+    frequencies: [0.14],
+    thetas: [0, Math.PI, Math.PI / 8],
+    kernelSize: 21,
+    sigma: 4,
+    gamma: 5,
+    psi: 0,
+  });
 
   // Stany wyboru parametrów obrazu
   const [currentHand, setCurrentHand] = useState<string | null>(null);
@@ -27,7 +44,7 @@ export const SkeletonizationPanel = () => {
   const [currentImageNumber, setCurrentImageNumber] = useState<number | null>(null);
 
   // Stany dla algorytmu i wyników
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState<"morphological" | "k3m">(
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState<"morphological" | "kmm">(
     "morphological",
   );
   const [minutiaeStats, setMinutiaeStats] = useState<{
@@ -42,8 +59,8 @@ export const SkeletonizationPanel = () => {
     if (!hand || !finger || !imageNumber) return;
     console.log("Załaduj obraz:", hand, finger, imageNumber);
 
-    // const imagePath = `/images/fingerprints/${hand == "left" ? "l" : "r"}${finger}_${imageNumber}.bmp`;
-    const imagePath = `/images/fingerprints/test.png  `;
+    const imagePath = `/images/fingerprints/${hand == "left" ? "l" : "r"}${finger}_${imageNumber}.bmp`;
+    // const imagePath = `/images/fingerprints/test.png  `;
 
     const canvas = originalCanvasRef.current;
     if (canvas) {
@@ -61,88 +78,77 @@ export const SkeletonizationPanel = () => {
         setOriginalImageData(imageData);
         console.log("Załadowano obraz:", imagePath);
 
-        // Resetuj wyniki poprzednich operacji
         setSkeletonImageData(null);
         setMinutiaeImageData(null);
         setMinutiaeStats(null);
       };
       img.onerror = () => {
         console.error(`Nie można załadować obrazu: ${imagePath}`);
-        // Opcjonalnie: wyświetl komunikat o błędzie dla użytkownika
       };
       img.src = imagePath;
     }
   };
 
-  // Losowe wybieranie obrazu
   const loadRandomImage = () => {
     setCurrentHand(Math.random() < 0.5 ? "left" : "right");
     setCurrentFinger(Math.floor(Math.random() * 5) + 1);
     setCurrentImageNumber(Math.floor(Math.random() * MAX_IMAGE_ID) + 1);
   };
 
-  // Wykonaj szkieletyzację używając wybranego algorytmu
   const performSkeletonization = () => {
     if (!originalImageData) return;
 
     const { width, height, data } = originalImageData;
-    let skeletonData = binarizeClampedArray(new Uint8ClampedArray(data), width, height, 30);
-    // if (selectedAlgorithm === "morphological") {
-    skeletonData = morphologicalThinning(skeletonData, width, height, 20);
-    // } else {
-    // skeletonData = k3mThinning(data, width, height);
-    // }
 
-    // Wyświetl wynik szkieletyzacji
-    const imageData = new ImageData(new Uint8ClampedArray(skeletonData), width, height);
+    let processedData = new Uint8ClampedArray(data);
+
+    if (useNormalize) {
+      processedData = contrastStretch(normalizeClampedArray(processedData, width, height));
+    }
+
+    // Zastosowanie filtra Gabora, jeśli checkbox jest zaznaczony
+    if (useGaborFilter) {
+      processedData = enhanceWithGabor(
+        processedData,
+        width,
+        height,
+        gaborParams.frequencies,
+        gaborParams.thetas,
+        gaborParams.kernelSize,
+        gaborParams.sigma,
+        gaborParams.gamma,
+        gaborParams.psi,
+      );
+    }
+
+    processedData = binarizeClampedArray(
+      new Uint8ClampedArray(processedData),
+      width,
+      height,
+      binarizationThreshold,
+    );
+
+    if (useGaborFilter) processedData = negateClampedArray(processedData);
+
+    if (selectedAlgorithm === "morphological") {
+      processedData = new Uint8ClampedArray(
+        morphologicalThinning(processedData, width, height, 50),
+      );
+    } else {
+      processedData = new Uint8ClampedArray(kmmThinning(processedData, width, height, 50));
+    }
+
+    const imageData = new ImageData(new Uint8ClampedArray(processedData), width, height);
     setSkeletonImageData(imageData);
 
-    // Wyczyść poprzednią detekcję minucji
     setMinutiaeImageData(null);
     setMinutiaeStats(null);
   };
 
-  // // Popraw połączenia przerwanych linii
-  // const improveConnections = () => {
-  //   if (!skeletonImageData) return;
-
-  //   const { width, height, data } = skeletonImageData;
-  //   const improvedData = improveSkeletonConnections(data, width, height);
-
-  //   // Aktualizuj obraz
-  //   const imageData = new ImageData(new Uint8ClampedArray(improvedData), width, height);
-  //   setSkeletonImageData(imageData);
-  // };
-
-  // // Wykryj minucje (cechy charakterystyczne)
-  // const detectAndVisualizeMinutiae = () => {
-  //   if (!skeletonImageData) return;
-
-  //   const { width, height, data } = skeletonImageData;
-
-  //   // Wykryj minucje
-  //   const minutiae = detectMinutiae(data, width, height);
-
-  //   // Zapisz statystyki
-  //   setMinutiaeStats({
-  //     endings: minutiae.endings.length,
-  //     bifurcations: minutiae.bifurcations.length,
-  //     cores: minutiae.cores.length,
-  //     deltas: minutiae.deltas.length,
-  //   });
-
-  //   // Wizualizacja minucji
-  //   const visualizedData = visualizeMinutiae(data, width, height, minutiae);
-  //   const imageData = new ImageData(new Uint8ClampedArray(visualizedData), width, height);
-  //   setMinutiaeImageData(imageData);
-  // };
-
-  // Załaduj obraz, gdy zmienią się parametry wyboru
   useEffect(() => {
     loadImage(currentHand, currentFinger, currentImageNumber);
   }, [currentHand, currentFinger, currentImageNumber]);
 
-  // Aktualizuj canvas oryginalnego obrazu
   useEffect(() => {
     if (!originalImageData || !originalCanvasRef.current) return;
 
@@ -155,7 +161,6 @@ export const SkeletonizationPanel = () => {
     }
   }, [originalImageData]);
 
-  // Aktualizuj canvas, gdy zmieni się obraz szkieletu
   useEffect(() => {
     if (!skeletonImageData || !skeletonCanvasRef.current) return;
 
@@ -169,7 +174,6 @@ export const SkeletonizationPanel = () => {
     }
   }, [skeletonImageData]);
 
-  // Aktualizuj canvas, gdy zmieni się obraz minucji
   useEffect(() => {
     if (!minutiaeImageData || !minutiaeCanvasRef.current) return;
 
@@ -250,26 +254,110 @@ export const SkeletonizationPanel = () => {
           <div className="flex flex-col gap-4 w-full">
             <h3 className="text-lg font-medium">Szkieletyzacja</h3>
 
-            <div className="flex gap-4 mb-2">
-              <div className="flex flex-col gap-2">
-                <span className="text-gray-300">Wybierz algorytm:</span>
-                <div className="flex gap-2">
-                  <Button
-                    label="Szkieletyzacja morfologiczna"
-                    onClick={() => setSelectedAlgorithm("morphological")}
-                    className={selectedAlgorithm === "morphological" ? "bg-blue-700" : ""}
+            <div className="flex flex-col gap-2">
+              <span className="text-gray-300">Wybór algorytmu</span>
+              <div className="flex gap-2">
+                <Button
+                  label="Szkieletyzacja morfologiczna"
+                  onClick={() => setSelectedAlgorithm("morphological")}
+                  className={selectedAlgorithm === "morphological" ? "bg-emerald-800" : ""}
+                />
+                <Button
+                  label="Algorytm KMM"
+                  onClick={() => setSelectedAlgorithm("kmm")}
+                  className={selectedAlgorithm === "kmm" ? "bg-emerald-800" : ""}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-gray-300">Opcje poprawy krawędzi</span>
+              <div className="flex items-center gap-2 ">
+                <input
+                  type="checkbox"
+                  id="useNormalize"
+                  checked={useNormalize}
+                  onChange={(e) => setUseNormalize(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="useNormalize" className="text-gray-300">
+                  Uwzględnij normalizację
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="useGaborFilter"
+                  checked={useGaborFilter}
+                  onChange={(e) => setUseGaborFilter(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="useGaborFilter" className="text-gray-300">
+                  Uwzględnij filtr Gabora
+                </label>
+              </div>
+              <div className="flex flex-col gap-4 p-4 relative">
+                <div
+                  className={`absolute top-0 left-0 w-full h-full bg-gray-900 rounded shadow-gray-800 transition-all ${useGaborFilter ? "opacity-0 cursor-default pointer-events-none" : "opacity-60 cursor-not-allowed"}`}
+                ></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Rozmiar jądra"
+                    type="number"
+                    value={gaborParams.kernelSize.toString()}
+                    onChange={(val) => setGaborParams({ ...gaborParams, kernelSize: Number(val) })}
                   />
-                  <Button
-                    label="Algorytm K3M"
-                    onClick={() => setSelectedAlgorithm("k3m")}
-                    className={selectedAlgorithm === "k3m" ? "bg-blue-700" : ""}
+                  <Input
+                    label="Sigma"
+                    type="number"
+                    value={gaborParams.sigma.toString()}
+                    onChange={(val) => setGaborParams({ ...gaborParams, sigma: Number(val) })}
+                  />
+                  <Input
+                    label="Gamma"
+                    type="number"
+                    value={gaborParams.gamma.toString()}
+                    onChange={(val) => setGaborParams({ ...gaborParams, gamma: Number(val) })}
+                  />
+                  <Input
+                    label="Psi"
+                    type="number"
+                    value={gaborParams.psi.toString()}
+                    onChange={(val) => setGaborParams({ ...gaborParams, psi: Number(val) })}
+                  />
+                  <Input
+                    label="Częstotliwości"
+                    type="text"
+                    value={gaborParams.frequencies.join(", ")}
+                    onChange={(val) =>
+                      setGaborParams({
+                        ...gaborParams,
+                        frequencies: val.split(",").map(Number),
+                      })
+                    }
+                  />
+                  <Input
+                    label="Kąty"
+                    type="text"
+                    value={gaborParams.thetas.join(", ")}
+                    onChange={(val) =>
+                      setGaborParams({ ...gaborParams, thetas: val.split(",").map(Number) })
+                    }
                   />
                 </div>
               </div>
+              <Input
+                label="Poziom progowania binarizacji"
+                type="number"
+                minValue={0}
+                maxValue={255}
+                value={binarizationThreshold.toString()}
+                onChange={(val) => setBinarizationThreshold(val ? Number(val) : 0)}
+              />
+            </div>
 
-              <div className="flex items-end">
-                <Button label="Wykonaj szkieletyzację" onClick={performSkeletonization} />
-              </div>
+            <div className="flex items-end">
+              <Button label="Wykonaj szkieletyzację" onClick={performSkeletonization} />
             </div>
           </div>
         </>
@@ -283,45 +371,7 @@ export const SkeletonizationPanel = () => {
             <div className="flex flex-col gap-2 w-full md:w-1/2">
               <h3 className="text-lg font-medium">Ścieniony obraz</h3>
               <canvas ref={skeletonCanvasRef} className="w-full border border-gray-600 rounded" />
-
-              {/* <div className="flex gap-2 mt-2">
-                <Button label="Popraw połączenia" onClick={improveConnections} />
-                <Button label="Wykryj minucje" onClick={detectAndVisualizeMinutiae} />
-              </div> */}
             </div>
-
-            {minutiaeImageData && (
-              <div className="flex flex-col gap-2 w-full md:w-1/2">
-                <h3 className="text-lg font-medium">Wykryte minucje</h3>
-                <canvas ref={minutiaeCanvasRef} className="w-full border border-gray-600 rounded" />
-
-                {minutiaeStats && (
-                  <div className="grid grid-cols-2 gap-2 mt-2 bg-gray-700 p-3 rounded">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-red-500 mr-2 rounded-full"></div>
-                      <span className="text-gray-300">Zakończenia: {minutiaeStats.endings}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-green-500 mr-2 rounded-full"></div>
-                      <span className="text-gray-300">
-                        Bifurkacje: {minutiaeStats.bifurcations}
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-blue-500 mr-2"></div>
-                      <span className="text-gray-300">Rdzenie: {minutiaeStats.cores}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div
-                        className="w-3 h-3 bg-yellow-500 mr-2"
-                        style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
-                      ></div>
-                      <span className="text-gray-300">Delty: {minutiaeStats.deltas}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </>
       )}
