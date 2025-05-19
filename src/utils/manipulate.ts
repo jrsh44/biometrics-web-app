@@ -43,7 +43,7 @@ export const binarizeClampedArray = (
   width: number,
   height: number,
   threshold: number = 128,
-): Uint8ClampedArray => {
+) => {
   const result = new Uint8ClampedArray(data.length);
 
   for (let y = 0; y < height; y++) {
@@ -63,30 +63,68 @@ export const binarizeClampedArray = (
   return result;
 };
 
-export const negation = (data: Uint8ClampedArray): Uint8ClampedArray => {
-  const result = new Uint8ClampedArray(data.length);
+export const normalizeClampedArray = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  eps: number = 1e-8,
+) => {
+  const result = new Float32Array(data.length);
+  let sum = 0;
+  let sumSq = 0;
 
   for (let i = 0; i < data.length; i += 4) {
-    const pixelValue = data[i] > 0 ? 0 : 255;
-    result[i] = result[i + 1] = result[i + 2] = pixelValue;
+    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+    sum += gray;
+    sumSq += gray * gray;
+  }
+
+  const totalPixels = width * height;
+  const mean = sum / totalPixels;
+  const variance = sumSq / totalPixels - mean * mean;
+  const stdDev = Math.sqrt(variance);
+
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+    const normalized = (gray - mean) / (stdDev + eps);
+
+    result[i] = result[i + 1] = result[i + 2] = normalized;
     result[i + 3] = data[i + 3];
   }
 
   return result;
 };
 
-export const rotate90counterclockwise = (matrix: number[][]): number[][] => {
-  const rows = matrix.length;
-  const cols = matrix[0].length;
-  const rotated = Array(cols)
-    .fill(0)
-    .map(() => Array(rows).fill(0));
+export const contrastStretch = (data: Float32Array) => {
+  const result = new Uint8ClampedArray(data.length);
+  let min = Infinity;
+  let max = -Infinity;
 
-  for (let i = 0; i < rows; i++) {
-    for (let j = 0; j < cols; j++) {
-      rotated[cols - j - 1][i] = matrix[i][j];
-    }
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = data[i];
+    if (gray < min) min = gray;
+    if (gray > max) max = gray;
   }
 
-  return rotated;
+  for (let i = 0; i < data.length; i += 4) {
+    const stretched = ((data[i] - min) / (max - min)) * 255;
+
+    result[i] = result[i + 1] = result[i + 2] = Math.min(255, Math.max(0, stretched));
+    result[i + 3] = data[i + 3];
+  }
+
+  return result;
+};
+
+export const negateClampedArray = (data: Uint8ClampedArray) => {
+  const result = new Uint8ClampedArray(data.length);
+
+  for (let i = 0; i < data.length; i += 4) {
+    result[i] = 255 - data[i];
+    result[i + 1] = 255 - data[i + 1];
+    result[i + 2] = 255 - data[i + 2];
+    result[i + 3] = data[i + 3];
+  }
+
+  return result;
 };
